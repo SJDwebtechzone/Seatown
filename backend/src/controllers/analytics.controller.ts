@@ -1,5 +1,5 @@
 import { Response } from "express";
-import { supabase } from "../config/supabase";
+import pool from "../config/db";
 import { AuthenticatedRequest } from "../middleware/auth";
 
 // Get aggregate stats for dashboard cards
@@ -7,24 +7,36 @@ export const getStats = async (req: AuthenticatedRequest, res: Response) => {
   try {
     // Run counts in parallel
     const [
-      { count: totalUsers },
-      { count: activeAdmins },
-      { count: publishedBlogs },
-      { count: draftBlogs },
-      { count: pendingReviews },
-      { count: approvedReviews },
-      { count: totalContacts },
-      { count: openContacts },
+      totalUsersResult,
+      activeAdminsResult,
+      publishedBlogsResult,
+      draftBlogsResult,
+      pendingReviewsResult,
+      approvedReviewsResult,
+      totalContactsResult,
+      openContactsResult,
     ] = await Promise.all([
-      supabase.from("users").select("*", { count: "exact", head: true }),
-      supabase.from("users").select("*", { count: "exact", head: true }).eq("status", "Active").in("role", ["Super Admin", "Administrator"]),
-      supabase.from("blog").select("*", { count: "exact", head: true }).eq("status", "Published"),
-      supabase.from("blog").select("*", { count: "exact", head: true }).eq("status", "Draft"),
-      supabase.from("review").select("*", { count: "exact", head: true }).eq("status", "Pending"),
-      supabase.from("review").select("*", { count: "exact", head: true }).eq("status", "Approved"),
-      supabase.from("contact_inquiries").select("*", { count: "exact", head: true }),
-      supabase.from("contact_inquiries").select("*", { count: "exact", head: true }).eq("status", "Open"),
+      pool.query(`SELECT COUNT(*) FROM users`),
+      pool.query(
+        `SELECT COUNT(*) FROM users WHERE status = 'Active' AND role = ANY($1::text[])`,
+        [["Super Admin", "Administrator"]]
+      ),
+      pool.query(`SELECT COUNT(*) FROM blog WHERE status = 'Published'`),
+      pool.query(`SELECT COUNT(*) FROM blog WHERE status = 'Draft'`),
+      pool.query(`SELECT COUNT(*) FROM review WHERE status = 'Pending'`),
+      pool.query(`SELECT COUNT(*) FROM review WHERE status = 'Approved'`),
+      pool.query(`SELECT COUNT(*) FROM contact_inquiries`),
+      pool.query(`SELECT COUNT(*) FROM contact_inquiries WHERE status = 'Open'`),
     ]);
+
+    const totalUsers = parseInt(totalUsersResult.rows[0].count, 10);
+    const activeAdmins = parseInt(activeAdminsResult.rows[0].count, 10);
+    const publishedBlogs = parseInt(publishedBlogsResult.rows[0].count, 10);
+    const draftBlogs = parseInt(draftBlogsResult.rows[0].count, 10);
+    const pendingReviews = parseInt(pendingReviewsResult.rows[0].count, 10);
+    const approvedReviews = parseInt(approvedReviewsResult.rows[0].count, 10);
+    const totalContacts = parseInt(totalContactsResult.rows[0].count, 10);
+    const openContacts = parseInt(openContactsResult.rows[0].count, 10);
 
     // Return stats (website visitors are simulated since we don't have a tracking script)
     return res.status(200).json({
@@ -56,18 +68,33 @@ export const getDashboardData = async (req: AuthenticatedRequest, res: Response)
   try {
     // 1. Fetch recent records for widgets
     const [
-      { data: recentReviews },
-      { data: recentUsers },
-      { data: recentBlogs },
-      { data: recentLogins },
-      { data: recentContacts },
+      recentReviewsResult,
+      recentUsersResult,
+      recentBlogsResult,
+      recentLoginsResult,
+      recentContactsResult,
     ] = await Promise.all([
-      supabase.from("review").select("*").order("created_at", { ascending: false }).limit(5),
-      supabase.from("users").select("id, username, fullname, role, status, created_at").order("created_at", { ascending: false }).limit(5),
-      supabase.from("blog").select("id, title, category, author, status, created_at").order("created_at", { ascending: false }).limit(5),
-      supabase.from("audit_logs").select("*").eq("action", "LOGIN_SUCCESS").order("created_at", { ascending: false }).limit(5),
-      supabase.from("contact_inquiries").select("*").order("created_at", { ascending: false }).limit(5),
+      pool.query(`SELECT * FROM review ORDER BY created_at DESC LIMIT 5`),
+      pool.query(
+        `SELECT id, username, fullname, role, status, created_at
+         FROM users ORDER BY created_at DESC LIMIT 5`
+      ),
+      pool.query(
+        `SELECT id, title, category, author, status, created_at
+         FROM blog ORDER BY created_at DESC LIMIT 5`
+      ),
+      pool.query(
+        `SELECT * FROM audit_logs WHERE action = 'LOGIN_SUCCESS'
+         ORDER BY created_at DESC LIMIT 5`
+      ),
+      pool.query(`SELECT * FROM contact_inquiries ORDER BY created_at DESC LIMIT 5`),
     ]);
+
+    const recentReviews = recentReviewsResult.rows;
+    const recentUsers = recentUsersResult.rows;
+    const recentBlogs = recentBlogsResult.rows;
+    const recentLogins = recentLoginsResult.rows;
+    const recentContacts = recentContactsResult.rows;
 
     // 2. Compile simulated analytics charts data (custom-designed for Seatown)
     const monthlyUsers = [
@@ -168,23 +195,17 @@ export const getAuditLogs = async (req: AuthenticatedRequest, res: Response) => 
     const limitNum = parseInt(limit as string, 10);
     const offset = (pageNum - 1) * limitNum;
 
-    const { data: logs, count, error } = await supabase
-      .from("audit_logs")
-      .select("*", { count: "exact" })
-      .order("created_at", { ascending: false })
-      .range(offset, offset + limitNum - 1);
+    const countResult = await pool.query(`SELECT COUNT(*) FROM audit_logs`);
+    const count = parseInt(countResult.rows[0].count, 10);
 
-    if (error) {
-      return res.status(500).json({
-        success: false,
-        message: "Failed to fetch audit logs.",
-        error,
-      });
-    }
+    const logsResult = await pool.query(
+      `SELECT * FROM audit_logs ORDER BY created_at DESC LIMIT $1 OFFSET $2`,
+      [limitNum, offset]
+    );
 
     return res.status(200).json({
       success: true,
-      logs,
+      logs: logsResult.rows,
       pagination: {
         total: count || 0,
         page: pageNum,

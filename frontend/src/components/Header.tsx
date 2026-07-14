@@ -53,8 +53,9 @@ export default function Header() {
       <div className="h-16 md:h-20 flex items-center">
       <div className="w-full px-6 lg:px-12">
         <div className="flex items-center justify-between w-full gap-9">
-          {/* Logo */}
-          <Link href="/" className="flex items-center group shrink-0">
+          {/* Logo — FIX: nudged slightly left on mobile via negative margin,
+              desktop (md+) unaffected */}
+          <Link href="/" className="flex items-center group shrink-0 -ml-2 sm:-ml-1 md:ml-0">
             <Image 
               src="/logo.png" 
               alt="Seatown Logo" 
@@ -136,7 +137,7 @@ export default function Header() {
                 isActive("/blog") ? "text-primary" : "text-gray-500 hover:text-primary"
               }`}
             >
-              Blog
+              Blogs
               {isActive("/blog") && (
                 <span className="absolute left-0 right-0 -bottom-2 h-[2.5px] bg-accent rounded-full" />
               )}
@@ -224,7 +225,7 @@ export default function Header() {
             onClick={() => setMobileMenuOpen(false)}
             className={`text-lg font-bold uppercase tracking-wider ${isActive("/blog") ? "text-accent" : "text-primary"}`}
           >
-            Blog
+            Blogs
           </Link>
           <Link
             href="/contact"

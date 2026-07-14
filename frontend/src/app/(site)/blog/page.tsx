@@ -3,6 +3,7 @@
 import React, { useState, useEffect } from "react";
 import HeroSection from "@/components/HeroSection";
 import Link from "next/link";
+import Image from "next/image";
 import { Clock, ArrowRight, Loader2 } from "lucide-react";
 
 interface Post {
@@ -14,71 +15,19 @@ interface Post {
   author: string;
   excerpt: string;
   avatar: string;
+  image: string | null;
   slug?: string;
 }
 
-/*const blogPosts: Post[] = [
-  {
-    id: 1,
-    title: "Navigating Ocean Route Congestion in 2026",
-    category: "Shipping",
-    date: "June 12, 2026",
-    readTime: "5 min read",
-    author: "Capt. Rajesh Iyer",
-    excerpt: "An in-depth analysis of major trade hub choke points and how feeder routes can circumvent port detention delays.",
-    avatar: "RI",
-  },
-  {
-    id: 2,
-    title: "Understanding NVOCC Slot Charters & FCL Commitments",
-    category: "Logistics",
-    date: "May 28, 2026",
-    readTime: "7 min read",
-    author: "Sarah Al-Mansoori",
-    excerpt: "How freight brokers can secure container slot allocations during high peak seasons using private NVOCC cargo networks.",
-    avatar: "SM",
-  },
-  {
-    id: 3,
-    title: "The Rise of Eco-Friendly Bio-Fuels in Maritime Shipping",
-    category: "Industry News",
-    date: "May 15, 2026",
-    readTime: "6 min read",
-    author: "Lin Jin-Wei",
-    excerpt: "Inspecting carbon offset initiatives and the transition of regional feeder vessels toward sustainable power modules.",
-    avatar: "LW",
-  },
-  {
-    id: 4,
-    title: "Optimizing Multi-Modal Trucking from Dock to Warehouse",
-    category: "Freight",
-    date: "April 30, 2026",
-    readTime: "4 min read",
-    author: "Alex Vance",
-    excerpt: "Practical metrics for reducing final mile delivery latency using automated trailer chassis allocation systems.",
-    avatar: "AV",
-  },
-  {
-    id: 5,
-    title: "Customs Tariff Classification Guide for SME Shippers",
-    category: "Logistics",
-    date: "April 18, 2026",
-    readTime: "8 min read",
-    author: "Dinesh Kumar",
-    excerpt: "Avoid expensive customs clearance audit penalties by understanding HS code structures and duty validations.",
-    avatar: "DK",
-  },
-  {
-    id: 6,
-    title: "Understanding Container Freight Station (CFS) Functions",
-    category: "Logistics",
-    date: "June 24, 2026",
-    readTime: "6 min read",
-    author: "James Collins",
-    excerpt: "A comprehensive guide to CFS stuffing, de-stuffing, and cargo consolidation procedures for import-export logistics.",
-    avatar: "JC",
+// FIX: same normalization used for review photos and the article page —
+// a bare relative path (no leading slash, no protocol) crashes next/image.
+function normalizeImagePath(path: string | null | undefined): string | null {
+  if (!path) return null;
+  if (path.startsWith("/") || path.startsWith("http://") || path.startsWith("https://")) {
+    return path;
   }
-]; */
+  return `/${path}`;
+}
 
 export default function Blog() {
   const [selectedCategory, setSelectedCategory] = useState<string>("All");
@@ -109,6 +58,9 @@ export default function Blog() {
                 .split(" ")
                 .map((n: string) => n[0])
                 .join(""),
+              // FIX: featured_image was never mapped here at all, so the
+              // card had nothing to render even if the backend sent it.
+              image: normalizeImagePath(b.featured_image || b.image),
               slug: b.slug,
             }));
             setAllPosts(mapped);
@@ -210,6 +162,24 @@ export default function Blog() {
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
               {filteredPosts.map((post) => (
                 <article key={post.id} className="bg-white border border-gray-100 rounded-3xl overflow-hidden shadow-xs hover:shadow-md transition-all flex flex-col group text-left">
+                  {/* FIX: featured image thumbnail — this block did not
+                      exist before, so no image ever rendered on any card
+                      regardless of what was uploaded on the backend. */}
+                  {post.image ? (
+                    <div className="relative w-full aspect-[16/9] overflow-hidden bg-gray-50">
+                      <Image
+                        src={post.image}
+                        alt={post.title}
+                        fill
+                        className="object-cover group-hover:scale-105 transition-transform duration-700 ease-out"
+                      />
+                    </div>
+                  ) : (
+                    <div className="w-full aspect-[16/9] bg-gray-50 flex items-center justify-center text-gray-300 text-xs font-bold uppercase tracking-wider">
+                      No Image
+                    </div>
+                  )}
+
                   {/* Header Category Stripe */}
                   <div className="p-6 pb-0 flex items-center justify-between">
                     <span className="text-[10px] font-bold uppercase tracking-widest text-accent bg-accent/10 px-3 py-1 rounded-md">
@@ -239,7 +209,7 @@ export default function Blog() {
                           {post.avatar}
                         </div>
                         <div>
-                          <div className="text-xs font-bold text-primary">{post.author}</div>
+                          <div className="text-xs font-bold text-primary">{"Seatown"}</div>
                           <div className="text-[10px] font-semibold text-gray-400">{post.date}</div>
                         </div>
                       </div>

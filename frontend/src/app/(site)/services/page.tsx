@@ -21,9 +21,14 @@ export default function Services() {
       <GsapAnimation targetId="ani-img" />
 
       {/* SERVICE DETAILS BLOCKS */}
+      {/* FIX: scroll-mt-* added to every anchor section below. The header
+          is `fixed`, so anchor-jumping to e.g. #nvocc was scrolling the
+          section's top edge to the very top of the viewport, right behind
+          the fixed header — clipping the heading. scroll-margin-top tells
+          the browser to stop short and leave room for the header. */}
 
       {/* 1. NVOCC */}
-      <section id="nvocc" className="py-20 border-b border-gray-100 bg-white relative overflow-hidden">
+      <section id="nvocc" className="scroll-mt-28 md:scroll-mt-32 pt-8 pb-20 md:py-20 border-b border-gray-100 bg-white relative overflow-hidden">
         
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="grid grid-cols-1 lg:grid-cols-12 gap-12 items-center">
@@ -50,7 +55,7 @@ export default function Services() {
         </div>
               <span className="text-accent text-xs font-extrabold uppercase tracking-widest">01 / Carrier Operations</span>
               <h2 className="text-2xl md:text-3xl font-black text-primary mt-2 mb-6">NVOCC Services</h2>
-              <p className="text-gray-600 text-base leading-relaxed mb-6">
+              <p className="text-gray-600 text-base leading-relaxed mb-6 text-justify">
                 Seatown Container Line acts as a certified Non-Vessel Operating Common Carrier (NVOCC). We maintain slot charter contracts with major shipping lines while operating our own fleet of dry van and special ISO container equipment, guaranteeing priority bookings on busy regional lanes.
                 SEATOWN CONTAINER LINE PVT LTD has expanded its operations into Non-Vessel Operating Common Carrier (NVOCC) services to meet the growing trade demands. We provide professional and cost-effective port-to-port and door-to-door deliveries. Our innovative approach ensures customers receive the best value for end-to-end logistics solutions. Our global connections and efficient services help us maintain a strong market presence.
               </p>
@@ -81,13 +86,13 @@ export default function Services() {
       </section>
 
       {/* 2. Freight Forwarding */}
-      <section id="freight-forwarding" className="py-20 border-b border-gray-100 bg-zinc-50/50">
+      <section id="freight-forwarding" className="scroll-mt-28 md:scroll-mt-32 py-20 border-b border-gray-100 bg-zinc-50/50">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="grid grid-cols-1 lg:grid-cols-12 gap-12 items-center">
             <div className="lg:col-span-6 lg:order-2 text-left relative overflow-hidden">
               <span className="text-accent text-xs font-extrabold uppercase tracking-widest">02 / Route Consolidation</span>
               <h2 className="text-2xl md:text-3xl font-black text-primary mt-2 mb-6">Ocean Freight Forwarding</h2>
-              <p className="text-gray-600 text-base leading-relaxed mb-6">
+              <p className="text-gray-600 text-base leading-relaxed mb-6 text-justify">
                 Through our trusted network of global logistics partners, we organize multi-modal transport lines spanning water barge, feeder routes, and transshipment terminals to deliver cargo directly from manufacturers to end warehouses.
                 SEATOWN CONTAINER LINE PVT LTD offers secure and reliable ocean freight forwarding solutions. Our services cover all cargo types, ensuring cost-effective and customized logistics solutions. We analyze the best transportation routes considering factors such as perishability, hazards, cost, transit time, and security, while also offering real-time tracking for shipments.
               </p>
@@ -118,7 +123,7 @@ export default function Services() {
       </section>
 
       {/* 3. Air Freight */}
-      <section id="air-freight" className="py-20 border-b border-gray-100 bg-white relative overflow-hidden">
+      <section id="air-freight" className="scroll-mt-28 md:scroll-mt-32 py-20 border-b border-gray-100 bg-white relative overflow-hidden">
         
         
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -146,7 +151,7 @@ export default function Services() {
         </div>
               <span className="text-accent text-xs font-extrabold uppercase tracking-widest">03 / Rapid Transit</span>
               <h2 className="text-2xl md:text-3xl font-black text-primary mt-2 mb-6">Air Freight</h2>
-              <p className="text-gray-600 text-base leading-relaxed mb-6">
+              <p className="text-gray-600 text-base leading-relaxed mb-6 text-justify">
                 When shipping latency is the critical parameter, our air freight division schedules immediate space allocations on primary international cargo airlines. We organize fast handling for electronics, parts, pharmaceutical, and high-value trade shipments.
                 We provide flexible air freight solutions tailored to your business needs. Our service options include:
               </p>
@@ -179,13 +184,13 @@ export default function Services() {
       </section>
 
       {/* 4. Customs Clearance */}
-      <section id="customs-clearance" className="py-20 border-b border-gray-100 bg-zinc-50/50">
+      <section id="customs-clearance" className="scroll-mt-28 md:scroll-mt-32 py-20 border-b border-gray-100 bg-zinc-50/50">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="grid grid-cols-1 lg:grid-cols-12 gap-12 items-center">
             <div className="lg:col-span-6 lg:order-2 text-left relative overflow-hidden">
               <span className="text-accent text-xs font-extrabold uppercase tracking-widest">04 / Cargo Compliance</span>
               <h2 className="text-2xl md:text-3xl font-black text-primary mt-2 mb-6">Customs Clearance & Brokerage</h2>
-              <p className="text-gray-600 text-base leading-relaxed mb-6">
+              <p className="text-gray-600 text-base leading-relaxed mb-6 text-justify">
                 Our expert team provides customs clearance services at all major sea and airports in India. We handle import/export consignments, hazardous goods, perishables, and project cargo under various customs schemes. Our services include document filing, examination, stuffing/de-stuffing, warehousing, and final delivery.
               </p>
             </div>
@@ -204,7 +209,7 @@ export default function Services() {
       </section>
 
       {/* 5. Project Cargo */}
-      <section id="project-cargo" className="py-20 border-b border-gray-100 bg-white relative overflow-hidden">
+      <section id="project-cargo" className="scroll-mt-28 md:scroll-mt-32 py-20 border-b border-gray-100 bg-white relative overflow-hidden">
         
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="grid grid-cols-1 lg:grid-cols-12 gap-12 items-center">
@@ -230,7 +235,7 @@ export default function Services() {
         </div>
               <span className="text-accent text-xs font-extrabold uppercase tracking-widest">05 / Heavy Lift Logistics</span>
               <h2 className="text-2xl md:text-3xl font-black text-primary mt-2 mb-6">Project Cargo</h2>
-              <p className="text-gray-600 text-base leading-relaxed mb-6">
+              <p className="text-gray-600 text-base leading-relaxed mb-6 text-justify">
                 We specialize in handling heavy lifts, out-of-gauge cargo, breakbulk, and high-value cargo. Our expertise extends to transporting mining equipment, generators, transformers, and construction equipment. With strong service contracts with major carriers and ship charterers, we offer DDU & DDP services for ODC and project shipments across India. Our long-standing partnerships in the trucking industry ensure competitive pricing for specialized transportation.</p>
             </div>
             
@@ -248,13 +253,13 @@ export default function Services() {
       </section>
 
       {/* 6. Container Trading */}
-      <section id="container-trading" className="py-20 border-b border-gray-100 bg-zinc-50/50">
+      <section id="container-trading" className="scroll-mt-28 md:scroll-mt-32 py-20 border-b border-gray-100 bg-zinc-50/50">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="grid grid-cols-1 lg:grid-cols-12 gap-12 items-center">
             <div className="lg:col-span-6 lg:order-2 text-left relative overflow-hidden">
               <span className="text-accent text-xs font-extrabold uppercase tracking-widest">06 / Asset Management</span>
               <h2 className="text-2xl md:text-3xl font-black text-primary mt-2 mb-6">Container Trading & Sales</h2>
-              <p className="text-gray-600 text-base leading-relaxed mb-6">
+              <p className="text-gray-600 text-base leading-relaxed mb-6 text-justify">
                 We supply new and used cargo-worthy ISO containers (20', 40' Dry, Reefers, Open Tops) for global trading, storage, or custom structural builds, with direct delivery to site yards.
               </p>
               <ul className="space-y-3.5 text-sm font-semibold text-gray-500">
@@ -290,7 +295,7 @@ export default function Services() {
       </section>
 
       {/* 7. Transportation */}
-      <section id="transportation" className="py-20 bg-white relative overflow-hidden">
+      <section id="transportation" className="scroll-mt-28 md:scroll-mt-32 py-20 bg-white relative overflow-hidden">
         
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="grid grid-cols-1 lg:grid-cols-12 gap-12 items-center">
@@ -316,7 +321,7 @@ export default function Services() {
         </div>
               <span className="text-accent text-xs font-extrabold uppercase tracking-widest">07 / Multi-Modal Link</span>
               <h2 className="text-2xl md:text-3xl font-black text-primary mt-2 mb-6">Land Transportation & Haulage</h2>
-              <p className="text-gray-600 text-base leading-relaxed mb-6">
+              <p className="text-gray-600 text-base leading-relaxed mb-6 text-justify">
                 Providing seamless container trucking hookups directly from port vessel discharges to inland logistics depots and customer store fronts.
               </p>
               <ul className="space-y-3.5 text-sm font-semibold text-gray-500">
@@ -355,13 +360,13 @@ export default function Services() {
       </section>
 
       {/* 8. Linear Agency */}
-      <section id="linear-agency" className="py-20 border-b border-gray-100 bg-zinc-50/50">
+      <section id="linear-agency" className="scroll-mt-28 md:scroll-mt-32 py-20 border-b border-gray-100 bg-zinc-50/50">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="grid grid-cols-1 lg:grid-cols-12 gap-12 items-center">
             <div className="lg:col-span-6 lg:order-2 text-left relative overflow-hidden">
               <span className="text-accent text-xs font-extrabold uppercase tracking-widest">08 / Strategic Agency Network</span>
               <h2 className="text-2xl md:text-3xl font-black text-primary mt-2 mb-6">Linear Agency</h2>
-              <p className="text-gray-600 text-base leading-relaxed mb-6">
+              <p className="text-gray-600 text-base leading-relaxed mb-6 text-justify">
                 We act as a strategic link between local manufacturers, traders, shippers, and consignees, particularly along India’s west coast (Chennai, Nhava Sheva, Mundra, Tuticorin). Our strong relationships with local authorities, CFS operators, transporters, and terminal services help minimize operational costs for our principals. Our team excels in administration, sales, inventory management, and operations, ensuring satisfaction for all stakeholders.</p>
             </div>
             

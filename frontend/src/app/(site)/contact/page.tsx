@@ -62,7 +62,7 @@ export default function Contact() {
       />
 
       {/* CONTACT INFO CARDS & FORM */}
-      <section className="py-20 relative overflow-hidden">
+      <section className="pt-8 pb-20 md:py-20 relative overflow-hidden">
         {/* Ship & Compass Watermark */}
         <div className="absolute inset-0 pointer-events-none z-0">
           <svg viewBox="0 0 1000 700" className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[80%] max-w-4xl opacity-[0.025] mix-blend-multiply" xmlns="http://www.w3.org/2000/svg" fill="#0B1F3A">
@@ -105,8 +105,8 @@ export default function Contact() {
                 <div className="w-full flex flex-col gap-5 relative z-0">
                   <div>
                     <p className="text-xs font-bold uppercase tracking-wider text-gray-400 mb-1.5">Registered Address</p>
-                    <p className="text-gray-600 text-base font-semibold leading-relaxed">
-                      <strong>SEATOWN CONTAINER LINE PVT LTD</strong><br/>
+                    <p className="text-gray-600 text-base font-semibold leading-relaxed text-justify">
+                      <strong className="text-primary">SEATOWN CONTAINER LINE PVT LTD</strong><br/>
                       New No.89 (Old No.45), Marine Tower,<br/>
                       4th Floor Room No-8, Thambu Chetty Street,<br/>
                       Chennai – 600 001

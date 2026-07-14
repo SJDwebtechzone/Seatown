@@ -87,22 +87,9 @@ export default function DashboardLayout({
   if (!user) {
     return null; // Redirected by middleware
   }
-  /*if (loading) {
-    return (
-      <div className="min-h-screen flex items-center justify-center">
-        Loading...
-      </div>
-    );
-  }*/
 
   // Navigation Items with Role Restrictions
   const navItems = [
-    {
-      name: "Overview",
-      path: "/dashboard",
-      icon: LayoutDashboard,
-      roles: ["Super Admin", "Administrator", "Editor", "Moderator", "Viewer"],
-    },
     {
       name: "User Management",
       path: "/dashboard/users",
@@ -120,12 +107,6 @@ export default function DashboardLayout({
       path: "/dashboard/reviews",
       icon: MessageSquare,
       roles: ["Super Admin", "Administrator", "Editor", "Moderator"],
-    },
-    {
-      name: "Website CMS",
-      path: "/dashboard/content",
-      icon: Globe,
-      roles: ["Super Admin", "Administrator"],
     },
   ];
 
@@ -229,6 +210,21 @@ export default function DashboardLayout({
               );
             })}
           </nav>
+
+          {/* FIX: persistent Sign Out button on the desktop sidebar —
+              previously the only way to log out on desktop was to click
+              the profile chip in the topbar and find it inside a dropdown.
+              This mirrors the pattern already used in the mobile drawer. */}
+          <div className="px-4 py-4 border-t border-[#152e4f]">
+            <button
+              onClick={logout}
+              title={sidebarCollapsed ? "Sign Out" : undefined}
+              className="w-full flex items-center gap-4 px-4 py-3.5 rounded-xl text-sm font-bold uppercase tracking-wider text-red-400 hover:text-red-300 hover:bg-red-500/10 transition-all cursor-pointer"
+            >
+              <LogOut className="w-5 h-5 shrink-0" />
+              {!sidebarCollapsed && <span>Sign Out</span>}
+            </button>
+          </div>
 
           {/* Collapse Button */}
           <button

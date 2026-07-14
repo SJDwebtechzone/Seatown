@@ -1,7 +1,16 @@
 import { Request, Response } from "express";
 import { randomUUID } from "crypto";
-import { supabase } from "../config/supabase";
+import fs from "fs";
+import path from "path";
+import pool from "../config/db";
 import { AuthenticatedRequest } from "../middleware/auth";
+
+const REVIEW_UPLOAD_DIR = path.join(__dirname, "..", "..", "uploads", "reviews");
+
+// Ensure the upload directory exists
+if (!fs.existsSync(REVIEW_UPLOAD_DIR)) {
+  fs.mkdirSync(REVIEW_UPLOAD_DIR, { recursive: true });
+}
 
 // Public submission of review (multipart form upload)
 export const createReview = async (req: Request, res: Response) => {
@@ -15,52 +24,24 @@ export const createReview = async (req: Request, res: Response) => {
       });
     }
 
-    let publicUrl = null;
+    let imageUrl: string | null = null;
 
     if (req.file) {
       const extension = req.file.originalname.split(".").pop();
       const filename = `${randomUUID()}.${extension}`;
+      const filePath = path.join(REVIEW_UPLOAD_DIR, filename);
 
-      const { error: uploadError } = await supabase.storage
-        .from("review-images")
-        .upload(filename, req.file.buffer, {
-          contentType: req.file.mimetype,
-        });
+      fs.writeFileSync(filePath, req.file.buffer);
 
-      if (uploadError) {
-        return res.status(500).json({
-          success: false,
-          message: "Failed to upload image.",
-          error: uploadError,
-        });
-      }
-
-      const {
-        data: { publicUrl: url },
-      } = supabase.storage
-        .from("review-images")
-        .getPublicUrl(filename);
-
-      publicUrl = url;
+      // Relative path stored in DB, served via express.static in app.ts
+      imageUrl = `uploads/reviews/${filename}`;
     }
 
-    const { error: dbError } = await supabase
-      .from("review")
-      .insert({
-        fullname,
-        role,
-        review,
-        image_url: publicUrl,
-        status: "Pending", // Default is pending moderation
-      });
-
-    if (dbError) {
-      return res.status(500).json({
-        success: false,
-        message: "Failed to insert review into database.",
-        error: dbError,
-      });
-    }
+    await pool.query(
+      `INSERT INTO review (fullname, role, review, image_url, status)
+       VALUES ($1, $2, $3, $4, 'Pending')`,
+      [fullname, role, review, imageUrl]
+    );
 
     return res.status(201).json({
       success: true,
@@ -84,33 +65,35 @@ export const getReviews = async (req: AuthenticatedRequest, res: Response) => {
     const limitNum = parseInt(limit as string, 10);
     const offset = (pageNum - 1) * limitNum;
 
-    let query = supabase
-      .from("review")
-      .select("*", { count: "exact" });
+    const conditions: string[] = [];
+    const params: any[] = [];
 
     if (status) {
-      query = query.eq("status", status);
+      params.push(status);
+      conditions.push(`status = $${params.length}`);
     }
-
     if (search) {
-      query = query.or(`fullname.ilike.%${search}%,review.ilike.%${search}%`);
+      params.push(`%${search}%`);
+      const idx = params.length;
+      conditions.push(`(fullname ILIKE $${idx} OR review ILIKE $${idx})`);
     }
 
-    const { data: reviews, count, error } = await query
-      .order("created_at", { ascending: false })
-      .range(offset, offset + limitNum - 1);
+    const whereClause = conditions.length > 0 ? `WHERE ${conditions.join(" AND ")}` : "";
 
-    if (error) {
-      return res.status(500).json({
-        success: false,
-        message: "Failed to fetch reviews.",
-        error,
-      });
-    }
+    const countResult = await pool.query(`SELECT COUNT(*) FROM review ${whereClause}`, params);
+    const count = parseInt(countResult.rows[0].count, 10);
+
+    const dataParams = [...params, limitNum, offset];
+    const reviewsResult = await pool.query(
+      `SELECT * FROM review ${whereClause}
+       ORDER BY created_at DESC
+       LIMIT $${dataParams.length - 1} OFFSET $${dataParams.length}`,
+      dataParams
+    );
 
     return res.status(200).json({
       success: true,
-      reviews,
+      reviews: reviewsResult.rows,
       pagination: {
         total: count || 0,
         page: pageNum,
@@ -127,28 +110,19 @@ export const getReviews = async (req: AuthenticatedRequest, res: Response) => {
   }
 };
 
-//fetch reviews from dashboard to homepage
+// Fetch reviews from dashboard to homepage
 export const getApprovedReviews = async (
   req: Request,
   res: Response
 ) => {
-  try{
-    const { data, error } = await supabase
-      .from("review")
-      .select("*")
-      .eq("status", "Approved")
-      .order("created_at", {ascending: false });
-
-    if (error) {
-      return res.status(500).json({
-        success: false,
-        message: "Failed to fetch reviews",
-      });
-    }
+  try {
+    const result = await pool.query(
+      `SELECT * FROM review WHERE status = 'Approved' ORDER BY created_at DESC`
+    );
 
     return res.json({
       success: true,
-      reviews: data,
+      reviews: result.rows,
     });
   } catch (err) {
     console.error(err);
@@ -166,11 +140,8 @@ export const updateReview = async (req: AuthenticatedRequest, res: Response) => 
     const { id } = req.params;
     const { fullname, role, review, status, image_url } = req.body;
 
-    const { data: currentReview } = await supabase
-      .from("review")
-      .select("*")
-      .eq("id", id)
-      .maybeSingle();
+    const currentResult = await pool.query(`SELECT * FROM review WHERE id = $1 LIMIT 1`, [id]);
+    const currentReview = currentResult.rows[0];
 
     if (!currentReview) {
       return res.status(404).json({
@@ -186,29 +157,36 @@ export const updateReview = async (req: AuthenticatedRequest, res: Response) => 
     if (status !== undefined) updates.status = status;
     if (image_url !== undefined) updates.image_url = image_url;
 
-    const { data: updatedReview, error } = await supabase
-      .from("review")
-      .update(updates)
-      .eq("id", id)
-      .select("*")
-      .single();
-
-    if (error) {
-      return res.status(500).json({
+    const keys = Object.keys(updates);
+    if (keys.length === 0) {
+      return res.status(400).json({
         success: false,
-        message: "Failed to update review.",
-        error,
+        message: "No fields to update.",
       });
     }
 
+    const setClauses = keys.map((k, i) => `${k} = $${i + 1}`);
+    const values = keys.map(k => updates[k]);
+    values.push(id);
+
+    const updateResult = await pool.query(
+      `UPDATE review SET ${setClauses.join(", ")} WHERE id = $${values.length} RETURNING *`,
+      values
+    );
+    const updatedReview = updateResult.rows[0];
+
     // Log action in audit logs
-    await supabase.from("audit_logs").insert({
-      user_id: req.user?.id,
-      username: req.user?.username || "System",
-      action: "REVIEW_UPDATE",
-      details: `Updated review for "${updatedReview.fullname}". Status: ${updatedReview.status}`,
-      ip_address: req.ip,
-    });
+    await pool.query(
+      `INSERT INTO audit_logs (user_id, username, action, details, ip_address)
+       VALUES ($1, $2, $3, $4, $5)`,
+      [
+        req.user?.id || null,
+        req.user?.username || "System",
+        "REVIEW_UPDATE",
+        `Updated review for "${updatedReview.fullname}". Status: ${updatedReview.status}`,
+        req.ip,
+      ]
+    );
 
     return res.status(200).json({
       success: true,
@@ -224,16 +202,13 @@ export const updateReview = async (req: AuthenticatedRequest, res: Response) => 
   }
 };
 
-// Admin delete review (requires JWT & moderation role - Super Admin / Admin / Editor / Moderator)
+// Admin delete review (requires JWT & moderation role)
 export const deleteReview = async (req: AuthenticatedRequest, res: Response) => {
   try {
     const { id } = req.params;
 
-    const { data: reviewToDelete } = await supabase
-      .from("review")
-      .select("fullname")
-      .eq("id", id)
-      .single();
+    const result = await pool.query(`SELECT fullname FROM review WHERE id = $1 LIMIT 1`, [id]);
+    const reviewToDelete = result.rows[0];
 
     if (!reviewToDelete) {
       return res.status(404).json({
@@ -242,27 +217,20 @@ export const deleteReview = async (req: AuthenticatedRequest, res: Response) => 
       });
     }
 
-    const { error } = await supabase
-      .from("review")
-      .delete()
-      .eq("id", id);
-
-    if (error) {
-      return res.status(500).json({
-        success: false,
-        message: "Failed to delete review.",
-        error,
-      });
-    }
+    await pool.query(`DELETE FROM review WHERE id = $1`, [id]);
 
     // Log action in audit logs
-    await supabase.from("audit_logs").insert({
-      user_id: req.user?.id,
-      username: req.user?.username || "System",
-      action: "REVIEW_DELETE",
-      details: `Deleted review submitted by: "${reviewToDelete.fullname}"`,
-      ip_address: req.ip,
-    });
+    await pool.query(
+      `INSERT INTO audit_logs (user_id, username, action, details, ip_address)
+       VALUES ($1, $2, $3, $4, $5)`,
+      [
+        req.user?.id || null,
+        req.user?.username || "System",
+        "REVIEW_DELETE",
+        `Deleted review submitted by: "${reviewToDelete.fullname}"`,
+        req.ip,
+      ]
+    );
 
     return res.status(200).json({
       success: true,
@@ -297,58 +265,43 @@ export const bulkAction = async (req: AuthenticatedRequest, res: Response) => {
     }
 
     if (action === "Delete") {
-      // Deleting multiple reviews
-      const { error } = await supabase
-        .from("review")
-        .delete()
-        .in("id", ids);
+      await pool.query(`DELETE FROM review WHERE id = ANY($1::uuid[])`, [ids]);
 
-      if (error) {
-        return res.status(500).json({
-          success: false,
-          message: "Failed to bulk delete reviews.",
-          error,
-        });
-      }
-
-      // Log action in audit logs
-      await supabase.from("audit_logs").insert({
-        user_id: req.user?.id,
-        username: req.user?.username || "System",
-        action: "REVIEW_BULK_DELETE",
-        details: `Bulk deleted ${ids.length} reviews.`,
-        ip_address: req.ip,
-      });
+      await pool.query(
+        `INSERT INTO audit_logs (user_id, username, action, details, ip_address)
+         VALUES ($1, $2, $3, $4, $5)`,
+        [
+          req.user?.id || null,
+          req.user?.username || "System",
+          "REVIEW_BULK_DELETE",
+          `Bulk deleted ${ids.length} reviews.`,
+          req.ip,
+        ]
+      );
 
       return res.status(200).json({
         success: true,
         message: `Successfully deleted ${ids.length} reviews.`,
       });
     } else {
-      // Updating status (Approved, Rejected, Spam)
       const targetStatus = action === "Approve" ? "Approved" : (action === "Reject" ? "Rejected" : "Spam");
 
-      const { error } = await supabase
-        .from("review")
-        .update({ status: targetStatus })
-        .in("id", ids);
+      await pool.query(
+        `UPDATE review SET status = $1 WHERE id = ANY($2::uuid[])`,
+        [targetStatus, ids]
+      );
 
-      if (error) {
-        return res.status(500).json({
-          success: false,
-          message: `Failed to bulk ${action.toLowerCase()} reviews.`,
-          error,
-        });
-      }
-
-      // Log action in audit logs
-      await supabase.from("audit_logs").insert({
-        user_id: req.user?.id,
-        username: req.user?.username || "System",
-        action: `REVIEW_BULK_${action.toUpperCase()}`,
-        details: `Bulk updated ${ids.length} reviews to status: ${targetStatus}`,
-        ip_address: req.ip,
-      });
+      await pool.query(
+        `INSERT INTO audit_logs (user_id, username, action, details, ip_address)
+         VALUES ($1, $2, $3, $4, $5)`,
+        [
+          req.user?.id || null,
+          req.user?.username || "System",
+          `REVIEW_BULK_${action.toUpperCase()}`,
+          `Bulk updated ${ids.length} reviews to status: ${targetStatus}`,
+          req.ip,
+        ]
+      );
 
       return res.status(200).json({
         success: true,

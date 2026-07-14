@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import { useRouter } from "next/navigation";
 import {
   Bold,
@@ -18,6 +18,7 @@ import {
   Calendar,
   Globe,
   X,
+  UploadCloud,
 } from "lucide-react";
 
 // Simple Regex-based Markdown to HTML parser
@@ -64,6 +65,17 @@ interface BlogFormProps {
   loading: boolean;
 }
 
+// FIX: same normalization used everywhere else on the site — a bare
+// relative path (no leading slash, no protocol) resolves against the
+// current page's URL instead of the site root, breaking the image.
+function normalizeImagePath(path: string | null | undefined): string | null {
+  if (!path) return null;
+  if (path.startsWith("/") || path.startsWith("http://") || path.startsWith("https://")) {
+    return path;
+  }
+  return `/${path}`;
+}
+
 export default function BlogForm({ initialData, onSubmit, loading }: BlogFormProps) {
   const router = useRouter();
   const [title, setTitle] = useState(initialData?.title || "");
@@ -92,6 +104,12 @@ export default function BlogForm({ initialData, onSubmit, loading }: BlogFormPro
   const [mediaModalOpen, setMediaModalOpen] = useState(false);
   const [mediaItems, setMediaItems] = useState<any[]>([]);
   const [mediaLoading, setMediaLoading] = useState(false);
+
+  // FIX: upload state — nothing like this existed before, there was no way
+  // to actually upload a new file, only pick from an already-populated list
+  const [uploading, setUploading] = useState(false);
+  const [uploadError, setUploadError] = useState<string | null>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   // Auto-generate slug from title
   useEffect(() => {
@@ -130,8 +148,57 @@ export default function BlogForm({ initialData, onSubmit, loading }: BlogFormPro
   };
 
   const handleSelectMedia = (url: string) => {
-    setFeaturedImage(url);
+    setFeaturedImage(normalizeImagePath(url) || url);
     setMediaModalOpen(false);
+  };
+
+  // FIX: actual upload handler. Posts the file to the media endpoint as
+  // multipart/form-data, then refreshes the library list and auto-selects
+  // the newly uploaded image so the user doesn't have to hunt for it.
+  const handleFileUpload = async (file: File) => {
+    if (!file.type.startsWith("image/")) {
+      setUploadError("Please select an image file.");
+      return;
+    }
+
+    setUploading(true);
+    setUploadError(null);
+
+    try {
+      const formData = new FormData();
+      // NOTE: field name assumed as "file" — confirm this matches what
+      // your backend's media upload endpoint expects. If it expects a
+      // different field name (e.g. "image", "media"), change it here.
+      formData.append("file", file);
+
+      const res = await fetch("/api/proxy/media", {
+        method: "POST",
+        body: formData,
+      });
+
+      const data = await res.json().catch(() => ({}));
+
+      if (!res.ok || !data.success) {
+        setUploadError(data.message || "Upload failed. Please try again.");
+        return;
+      }
+
+      // Refresh the library so the new file shows up in the grid
+      await fetchMedia();
+
+      // Auto-select the newly uploaded image if the backend returns it
+      const uploadedUrl = data.media?.url || data.url;
+      if (uploadedUrl) {
+        setFeaturedImage(normalizeImagePath(uploadedUrl) || uploadedUrl);
+        setMediaModalOpen(false);
+      }
+    } catch (err) {
+      console.error(err);
+      setUploadError("Server error while uploading. Please try again.");
+    } finally {
+      setUploading(false);
+      if (fileInputRef.current) fileInputRef.current.value = "";
+    }
   };
 
   const insertMarkdown = (syntax: string) => {
@@ -259,68 +326,28 @@ export default function BlogForm({ initialData, onSubmit, loading }: BlogFormPro
             {/* Editor Toolbar */}
             <div className="bg-gray-50 px-4 py-3 border-b border-gray-200 flex items-center justify-between">
               <div className="flex items-center gap-1">
-                <button
-                  type="button"
-                  onClick={() => insertMarkdown("bold")}
-                  className="p-2 text-gray-500 hover:text-primary hover:bg-gray-100 rounded-lg cursor-pointer"
-                  title="Bold"
-                >
+                <button type="button" onClick={() => insertMarkdown("bold")} className="p-2 text-gray-500 hover:text-primary hover:bg-gray-100 rounded-lg cursor-pointer" title="Bold">
                   <Bold size={16} />
                 </button>
-                <button
-                  type="button"
-                  onClick={() => insertMarkdown("italic")}
-                  className="p-2 text-gray-500 hover:text-primary hover:bg-gray-100 rounded-lg cursor-pointer"
-                  title="Italic"
-                >
+                <button type="button" onClick={() => insertMarkdown("italic")} className="p-2 text-gray-500 hover:text-primary hover:bg-gray-100 rounded-lg cursor-pointer" title="Italic">
                   <Italic size={16} />
                 </button>
-                <button
-                  type="button"
-                  onClick={() => insertMarkdown("h1")}
-                  className="p-2 text-gray-500 hover:text-primary hover:bg-gray-100 rounded-lg cursor-pointer"
-                  title="Header 1"
-                >
+                <button type="button" onClick={() => insertMarkdown("h1")} className="p-2 text-gray-500 hover:text-primary hover:bg-gray-100 rounded-lg cursor-pointer" title="Header 1">
                   <Heading1 size={16} />
                 </button>
-                <button
-                  type="button"
-                  onClick={() => insertMarkdown("h2")}
-                  className="p-2 text-gray-500 hover:text-primary hover:bg-gray-100 rounded-lg cursor-pointer"
-                  title="Header 2"
-                >
+                <button type="button" onClick={() => insertMarkdown("h2")} className="p-2 text-gray-500 hover:text-primary hover:bg-gray-100 rounded-lg cursor-pointer" title="Header 2">
                   <Heading2 size={16} />
                 </button>
-                <button
-                  type="button"
-                  onClick={() => insertMarkdown("quote")}
-                  className="p-2 text-gray-500 hover:text-primary hover:bg-gray-100 rounded-lg cursor-pointer"
-                  title="Blockquote"
-                >
+                <button type="button" onClick={() => insertMarkdown("quote")} className="p-2 text-gray-500 hover:text-primary hover:bg-gray-100 rounded-lg cursor-pointer" title="Blockquote">
                   <Quote size={16} />
                 </button>
-                <button
-                  type="button"
-                  onClick={() => insertMarkdown("link")}
-                  className="p-2 text-gray-500 hover:text-primary hover:bg-gray-100 rounded-lg cursor-pointer"
-                  title="Insert Link"
-                >
+                <button type="button" onClick={() => insertMarkdown("link")} className="p-2 text-gray-500 hover:text-primary hover:bg-gray-100 rounded-lg cursor-pointer" title="Insert Link">
                   <LinkIcon size={16} />
                 </button>
-                <button
-                  type="button"
-                  onClick={() => insertMarkdown("list")}
-                  className="p-2 text-gray-500 hover:text-primary hover:bg-gray-100 rounded-lg cursor-pointer"
-                  title="Bullet List"
-                >
+                <button type="button" onClick={() => insertMarkdown("list")} className="p-2 text-gray-500 hover:text-primary hover:bg-gray-100 rounded-lg cursor-pointer" title="Bullet List">
                   <List size={16} />
                 </button>
-                <button
-                  type="button"
-                  onClick={() => insertMarkdown("image")}
-                  className="p-2 text-gray-500 hover:text-primary hover:bg-gray-100 rounded-lg cursor-pointer"
-                  title="Insert Image Link"
-                >
+                <button type="button" onClick={() => insertMarkdown("image")} className="p-2 text-gray-500 hover:text-primary hover:bg-gray-100 rounded-lg cursor-pointer" title="Insert Image Link">
                   <ImageIcon size={16} />
                 </button>
               </div>
@@ -570,6 +597,47 @@ export default function BlogForm({ initialData, onSubmit, loading }: BlogFormPro
             </button>
             
             <h2 className="text-xl font-black text-[#0B1F3A] mb-4">Select Image from Media Library</h2>
+
+            {/* FIX: actual upload control — this entire block did not exist
+                before. Without it there was no way to add a new image; the
+                modal could only ever show files that already existed. */}
+            <div className="mb-5">
+              <input
+                ref={fileInputRef}
+                type="file"
+                accept="image/*"
+                className="hidden"
+                onChange={(e) => {
+                  const file = e.target.files?.[0];
+                  if (file) handleFileUpload(file);
+                }}
+              />
+              <button
+                type="button"
+                onClick={() => fileInputRef.current?.click()}
+                disabled={uploading}
+                className="w-full h-24 border-2 border-dashed border-accent/40 hover:border-accent hover:bg-accent/5 rounded-xl flex flex-col items-center justify-center gap-2 text-accent transition-all cursor-pointer disabled:opacity-60 disabled:cursor-not-allowed"
+              >
+                {uploading ? (
+                  <>
+                    <Loader2 className="w-6 h-6 animate-spin" />
+                    <span className="text-[10px] font-black uppercase tracking-wider">
+                      Uploading...
+                    </span>
+                  </>
+                ) : (
+                  <>
+                    <UploadCloud className="w-6 h-6" />
+                    <span className="text-[10px] font-black uppercase tracking-wider">
+                      Click to Upload New Image
+                    </span>
+                  </>
+                )}
+              </button>
+              {uploadError && (
+                <p className="mt-2 text-[10px] font-bold text-red-500">{uploadError}</p>
+              )}
+            </div>
             
             {mediaLoading ? (
               <div className="flex-1 flex flex-col items-center justify-center">
@@ -579,36 +647,41 @@ export default function BlogForm({ initialData, onSubmit, loading }: BlogFormPro
                 </p>
               </div>
             ) : mediaItems.length === 0 ? (
-              <div className="flex-1 flex items-center justify-center text-gray-400">
-                No media uploaded. Close this modal and go to Media Library to upload files.
+              <div className="flex-1 flex items-center justify-center text-gray-400 text-center text-xs font-semibold px-8">
+                No media uploaded yet. Use the upload button above to add your first image.
               </div>
             ) : (
               <div className="flex-1 overflow-y-auto grid grid-cols-2 sm:grid-cols-4 gap-4 p-1">
                 {mediaItems
                   .filter((item) => item.mimeType.startsWith("image/"))
-                  .map((item) => (
-                    <div
-                      key={item.name}
-                      onClick={() => handleSelectMedia(item.url)}
-                      className="bg-gray-50 border border-gray-200 rounded-xl overflow-hidden cursor-pointer group hover:border-accent hover:shadow-md transition-all flex flex-col"
-                    >
-                      <div className="h-28 bg-white border-b border-gray-100 overflow-hidden relative">
-                        <img
-                          src={item.url}
-                          alt={item.originalName || item.name}
-                          className="w-full h-full object-cover group-hover:scale-[1.03] transition-transform duration-300"
-                        />
+                  .map((item) => {
+                    const thumbSrc = normalizeImagePath(item.url);
+                    return (
+                      <div
+                        key={item.name}
+                        onClick={() => handleSelectMedia(item.url)}
+                        className="bg-gray-50 border border-gray-200 rounded-xl overflow-hidden cursor-pointer group hover:border-accent hover:shadow-md transition-all flex flex-col"
+                      >
+                        <div className="h-28 bg-white border-b border-gray-100 overflow-hidden relative">
+                          {thumbSrc && (
+                            <img
+                              src={thumbSrc}
+                              alt={item.originalName || item.name}
+                              className="w-full h-full object-cover group-hover:scale-[1.03] transition-transform duration-300"
+                            />
+                          )}
+                        </div>
+                        <div className="p-2.5 truncate text-left">
+                          <p className="text-[10px] font-extrabold text-primary truncate">
+                            {item.name}
+                          </p>
+                          <p className="text-[9px] text-gray-400 font-bold uppercase tracking-wider mt-0.5">
+                            {(item.size / 1024).toFixed(1)} KB
+                          </p>
+                        </div>
                       </div>
-                      <div className="p-2.5 truncate text-left">
-                        <p className="text-[10px] font-extrabold text-primary truncate">
-                          {item.name}
-                        </p>
-                        <p className="text-[9px] text-gray-400 font-bold uppercase tracking-wider mt-0.5">
-                          {(item.size / 1024).toFixed(1)} KB
-                        </p>
-                      </div>
-                    </div>
-                  ))}
+                    );
+                  })}
               </div>
             )}
           </div>

@@ -1,6 +1,6 @@
 import { Response } from "express";
 import bcrypt from "bcryptjs";
-import { supabase } from "../config/supabase";
+import pool from "../config/db";
 import { signToken } from "../utils/jwt";
 import { AuthenticatedRequest } from "../middleware/auth";
 
@@ -8,19 +8,10 @@ import { AuthenticatedRequest } from "../middleware/auth";
 export const setup = async (req: AuthenticatedRequest, res: Response) => {
   try {
     // Check if any user exists
-    const { count, error: countError } = await supabase
-      .from("users")
-      .select("*", { count: "exact", head: true });
+    const countResult = await pool.query(`SELECT COUNT(*) FROM users`);
+    const count = parseInt(countResult.rows[0].count, 10);
 
-    if (countError) {
-      return res.status(500).json({
-        success: false,
-        message: "Database query error.",
-        error: countError,
-      });
-    }
-
-    if (count && count > 0) {
+    if (count > 0) {
       return res.status(400).json({
         success: false,
         message: "Setup has already been completed. Admin users exist.",
@@ -40,33 +31,20 @@ export const setup = async (req: AuthenticatedRequest, res: Response) => {
     const password_hash = await bcrypt.hash(password, salt);
 
     // Insert Super Admin
-    const { data, error: insertError } = await supabase
-      .from("users")
-      .insert({
-        username,
-        password_hash,
-        fullname,
-        role: "Super Admin",
-        status: "Active",
-      })
-      .select("id, username, fullname, role, status")
-      .single();
-
-    if (insertError) {
-      return res.status(500).json({
-        success: false,
-        message: "Failed to create Super Admin.",
-        error: insertError,
-      });
-    }
+    const insertResult = await pool.query(
+      `INSERT INTO users (username, password_hash, fullname, role, status)
+       VALUES ($1, $2, $3, 'Super Admin', 'Active')
+       RETURNING id, username, fullname, role, status`,
+      [username, password_hash, fullname]
+    );
+    const data = insertResult.rows[0];
 
     // Log action in audit logs
-    await supabase.from("audit_logs").insert({
-      username: username,
-      action: "SETUP_COMPLETED",
-      details: `Super Admin account created: ${username}`,
-      ip_address: req.ip,
-    });
+    await pool.query(
+      `INSERT INTO audit_logs (username, action, details, ip_address)
+       VALUES ($1, $2, $3, $4)`,
+      [username, "SETUP_COMPLETED", `Super Admin account created: ${username}`, req.ip]
+    );
 
     return res.status(201).json({
       success: true,
@@ -95,28 +73,19 @@ export const login = async (req: AuthenticatedRequest, res: Response) => {
     }
 
     // Fetch user
-    const { data: user, error } = await supabase
-      .from("users")
-      .select("*")
-      .eq("username", username)
-      .maybeSingle();
-
-    if (error) {
-      return res.status(500).json({
-        success: false,
-        message: "Database error.",
-        error,
-      });
-    }
+    const userResult = await pool.query(
+      `SELECT * FROM users WHERE username = $1 LIMIT 1`,
+      [username]
+    );
+    const user = userResult.rows[0];
 
     if (!user) {
       // Log failed login
-      await supabase.from("audit_logs").insert({
-        username,
-        action: "LOGIN_FAILED",
-        details: "User not found",
-        ip_address: req.ip,
-      });
+      await pool.query(
+        `INSERT INTO audit_logs (username, action, details, ip_address)
+         VALUES ($1, $2, $3, $4)`,
+        [username, "LOGIN_FAILED", "User not found", req.ip]
+      );
 
       return res.status(401).json({
         success: false,
@@ -125,13 +94,11 @@ export const login = async (req: AuthenticatedRequest, res: Response) => {
     }
 
     if (user.status === "Suspended") {
-      await supabase.from("audit_logs").insert({
-        user_id: user.id,
-        username,
-        action: "LOGIN_FAILED",
-        details: "Account suspended",
-        ip_address: req.ip,
-      });
+      await pool.query(
+        `INSERT INTO audit_logs (user_id, username, action, details, ip_address)
+         VALUES ($1, $2, $3, $4, $5)`,
+        [user.id, username, "LOGIN_FAILED", "Account suspended", req.ip]
+      );
 
       return res.status(403).json({
         success: false,
@@ -143,13 +110,11 @@ export const login = async (req: AuthenticatedRequest, res: Response) => {
     const isMatch = await bcrypt.compare(password, user.password_hash);
     if (!isMatch) {
       // Log failed login
-      await supabase.from("audit_logs").insert({
-        user_id: user.id,
-        username,
-        action: "LOGIN_FAILED",
-        details: "Incorrect password",
-        ip_address: req.ip,
-      });
+      await pool.query(
+        `INSERT INTO audit_logs (user_id, username, action, details, ip_address)
+         VALUES ($1, $2, $3, $4, $5)`,
+        [user.id, username, "LOGIN_FAILED", "Incorrect password", req.ip]
+      );
 
       return res.status(401).json({
         success: false,
@@ -159,10 +124,10 @@ export const login = async (req: AuthenticatedRequest, res: Response) => {
 
     // Update last login
     const now = new Date().toISOString();
-    await supabase
-      .from("users")
-      .update({ last_login: now })
-      .eq("id", user.id);
+    await pool.query(
+      `UPDATE users SET last_login = $1 WHERE id = $2`,
+      [now, user.id]
+    );
 
     // Generate JWT
     const token = signToken({
@@ -173,13 +138,11 @@ export const login = async (req: AuthenticatedRequest, res: Response) => {
     });
 
     // Log successful login
-    await supabase.from("audit_logs").insert({
-      user_id: user.id,
-      username,
-      action: "LOGIN_SUCCESS",
-      details: `Successful login. Role: ${user.role}`,
-      ip_address: req.ip,
-    });
+    await pool.query(
+      `INSERT INTO audit_logs (user_id, username, action, details, ip_address)
+       VALUES ($1, $2, $3, $4, $5)`,
+      [user.id, username, "LOGIN_SUCCESS", `Successful login. Role: ${user.role}`, req.ip]
+    );
 
     return res.status(200).json({
       success: true,
@@ -213,13 +176,14 @@ export const getMe = async (req: AuthenticatedRequest, res: Response) => {
   }
 
   try {
-    const { data: user, error } = await supabase
-      .from("users")
-      .select("id, username, fullname, role, status, last_login, created_at")
-      .eq("id", req.user.id)
-      .single();
+    const result = await pool.query(
+      `SELECT id, username, fullname, role, status, last_login, created_at
+       FROM users WHERE id = $1 LIMIT 1`,
+      [req.user.id]
+    );
+    const user = result.rows[0];
 
-    if (error || !user) {
+    if (!user) {
       return res.status(404).json({
         success: false,
         message: "User not found.",

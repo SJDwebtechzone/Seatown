@@ -123,7 +123,7 @@ export default function AboutUs() {
       {/* ═══════════════════════════════════════════════════
           ABOUT CONTENT & STATS
       ═══════════════════════════════════════════════════ */}
-      <section className="py-20 bg-white relative overflow-hidden">
+      <section className="pt-8 pb-20 md:py-20 bg-white relative overflow-hidden">
         {/* Crane & Container Stack Watermark */}
         <div className="absolute inset-0 pointer-events-none z-0 overflow-hidden">
           <svg viewBox="0 0 1000 600" className="absolute w-full h-full opacity-[0.03] mix-blend-multiply" xmlns="http://www.w3.org/2000/svg" fill="#0B1F3A">
@@ -167,16 +167,16 @@ export default function AboutUs() {
               <h2 className="text-3xl font-black text-primary mb-6">Our Story</h2>
               <div className="w-12 h-[3px] bg-accent rounded-full mb-8" />
               
-              <p className="text-gray-600 text-base md:text-[17px] leading-relaxed mb-5">
+              <p className="text-gray-600 text-base md:text-[17px] leading-relaxed mb-5 text-justify">
                 <strong className="text-primary font-black">SEATOWN CONTAINER LINE</strong> is one of the fastest-growing shipping and logistics companies, specializing in NVOCC, freight forwarding, air cargo, container trading, customs brokerage, and transportation services across India. Established in 2025, our head office is in Chennai, with planned branches in Mundra, Nhava Sheva, and Tuticorin, as well as ICD locations across India.
               </p>
-              <p className="text-gray-600 text-base md:text-[17px] leading-relaxed mb-5">
+              <p className="text-gray-600 text-base md:text-[17px] leading-relaxed mb-5 text-justify">
                 Since our inception, we have rapidly expanded and are now a regular container carrier serving the Middle East, Far East, Indian Subcontinent (ISC), Southeast Asia, Red Sea Ports, Africa, Russia, Europe, the USA, and the UK.
               </p>
-              <p className="text-gray-600 text-base md:text-[17px] leading-relaxed mb-5">
+              <p className="text-gray-600 text-base md:text-[17px] leading-relaxed mb-5 text-justify">
                 We are committed to creating value for our clients through innovative partnerships and cutting-edge technology. Our motto, &quot;Customer Satisfaction,&quot; drives our dedicated team to provide reliable, efficient, and cost-effective services. Our professionally trained staff ensures quality shipping solutions at all times.
               </p>
-              <p className="text-gray-600 text-base md:text-[17px] leading-relaxed mb-10">
+              <p className="text-gray-600 text-base md:text-[17px] leading-relaxed mb-10 text-justify">
                 At SEATOWN CONTAINER LINE, we continue to explore, expand, and grow in the cargo transportation and logistics industry by delivering high-quality services. Our goal is to make global trade seamless and accessible for our clients through our shipping and logistics expertise.
               </p>
 
@@ -261,7 +261,7 @@ export default function AboutUs() {
                 <h3 className="text-xl md:text-2xl font-black text-primary">Our Mission</h3>
               </div>
               <div className="w-10 h-[3px] bg-accent rounded-full mb-4" />
-              <p className="text-gray-600 text-base md:text-[17px] leading-relaxed font-medium">
+              <p className="text-gray-600 text-base md:text-[17px] leading-relaxed font-medium text-justify">
                 &quot;To provide reliable, efficient, and sustainable shipping solutions that connect businesses and communities worldwide. We are committed to delivering excellence through innovation, safety, and environmental responsibility while ensuring customer satisfaction and operational efficiency.&quot;
               </p>
             </div>
@@ -275,7 +275,7 @@ export default function AboutUs() {
                 <h3 className="text-xl md:text-2xl font-black text-primary">Our Vision</h3>
               </div>
               <div className="w-10 h-[3px] bg-accent rounded-full mb-4" />
-              <p className="text-gray-600 text-base md:text-[17px] leading-relaxed font-medium">
+              <p className="text-gray-600 text-base md:text-[17px] leading-relaxed font-medium text-justify">
                 &quot;To be the world&apos;s leading shipping company, pioneering eco-friendly logistics, enhancing global trade, and redefining maritime transportation with cutting-edge technology and exceptional service.&quot;
               </p>
             </div>
@@ -294,7 +294,7 @@ export default function AboutUs() {
                 <li><strong className="text-primary font-bold">Consider It Done</strong> &ndash; Customized multimodal transport.</li>
                 <li><strong className="text-primary font-bold">Professionally Yours</strong> &ndash; Top-tier global network.</li>
               </ul>
-              <p className="text-gray-500 text-sm md:text-base font-semibold leading-relaxed border-t border-gray-100 pt-4">
+              <p className="text-gray-500  text-justify text-sm md:text-base font-semibold leading-relaxed border-t border-gray-100 pt-4">
                 With in-depth industry knowledge and a strong network, we deliver exceptional service.
               </p>
             </div>
@@ -309,8 +309,8 @@ export default function AboutUs() {
               </div>
               <div className="w-10 h-[3px] bg-accent rounded-full mb-4" />
               <ul className="space-y-4 text-gray-600 text-base md:text-[17px] leading-relaxed font-medium">
-                <li><strong className="text-primary font-bold block mb-1">Be Safe, Not Sorry</strong> Safety is our top priority. Prevention is better than regret.</li>
-                <li><strong className="text-primary font-bold block mb-1">Customers Always in Mind</strong> We listen, learn, and anticipate needs because their success is ours.</li>
+                <li><strong className="text-primary font-bold block mb-1 text-justify">Be Safe, Not Sorry</strong> Safety is our top priority. Prevention is better than regret.</li>
+                <li><strong className="text-primary font-bold block mb-1 text-justify">Customers Always in Mind</strong> We listen, learn, and anticipate needs because their success is ours.</li>
               </ul>
             </div>
 

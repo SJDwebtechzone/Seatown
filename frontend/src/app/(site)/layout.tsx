@@ -1,5 +1,5 @@
-import type { Metadata } from "next";
-import { Playfair_Display } from "next/font/google";
+// import type { Metadata } from "next";
+import { Playfair_Display, Space_Grotesk } from "next/font/google";
 import "../../globals.css";
 import Header from "@/components/Header";
 import Footer from "@/components/Footer";
@@ -11,6 +11,12 @@ const playfair = Playfair_Display({
   subsets: ["latin"],
   weight: ["400", "500", "600", "700", "800", "900"],
   variable: "--font-Playfair_Display",
+});
+
+const spaceGrotesk = Space_Grotesk({
+  subsets: ["latin"],
+  weight: ["500", "600", "700"],
+  variable: "--font-space-grotesk",
 });
 
 export const metadata: Metadata = {
@@ -27,7 +33,7 @@ export default function SiteLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en" className={`${playfair.variable} h-full antialiased`}>
+    <html lang="en" className={`${playfair.variable} ${spaceGrotesk.variable} h-full antialiased`}>
       <body className="min-h-full flex flex-col bg-white text-primary font-sans antialiased overflow-x-hidden pt-[30px]">
         {/* Global Premium Effects */}
         <TimezoneTicker />

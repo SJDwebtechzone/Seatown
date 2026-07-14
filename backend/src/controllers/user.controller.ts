@@ -1,6 +1,6 @@
 import { Response } from "express";
 import bcrypt from "bcryptjs";
-import { supabase } from "../config/supabase";
+import pool from "../config/db";
 import { AuthenticatedRequest } from "../middleware/auth";
 
 // Get all users (Super Admin only)
@@ -11,37 +11,45 @@ export const getUsers = async (req: AuthenticatedRequest, res: Response) => {
     const limitNum = parseInt(limit as string, 10);
     const offset = (pageNum - 1) * limitNum;
 
-    let query = supabase
-      .from("users")
-      .select("id, username, fullname, role, status, last_login, created_at", { count: "exact" });
+    const conditions: string[] = [];
+    const params: any[] = [];
 
-    // Apply filters
     if (role) {
-      query = query.eq("role", role);
+      params.push(role);
+      conditions.push(`role = $${params.length}`);
     }
     if (status) {
-      query = query.eq("status", status);
+      params.push(status);
+      conditions.push(`status = $${params.length}`);
     }
     if (search) {
-      query = query.or(`username.ilike.%${search}%,fullname.ilike.%${search}%`);
+      params.push(`%${search}%`);
+      const idx = params.length;
+      conditions.push(`(username ILIKE $${idx} OR fullname ILIKE $${idx})`);
     }
 
-    // Apply pagination
-    const { data: users, count, error } = await query
-      .order("created_at", { ascending: false })
-      .range(offset, offset + limitNum - 1);
+    const whereClause = conditions.length > 0 ? `WHERE ${conditions.join(" AND ")}` : "";
 
-    if (error) {
-      return res.status(500).json({
-        success: false,
-        message: "Failed to fetch users.",
-        error,
-      });
-    }
+    // Total count for pagination
+    const countResult = await pool.query(
+      `SELECT COUNT(*) FROM users ${whereClause}`,
+      params
+    );
+    const count = parseInt(countResult.rows[0].count, 10);
+
+    // Paginated results
+    const dataParams = [...params, limitNum, offset];
+    const usersResult = await pool.query(
+      `SELECT id, username, fullname, role, status, last_login, created_at
+       FROM users ${whereClause}
+       ORDER BY created_at DESC
+       LIMIT $${dataParams.length - 1} OFFSET $${dataParams.length}`,
+      dataParams
+    );
 
     return res.status(200).json({
       success: true,
-      users,
+      users: usersResult.rows,
       pagination: {
         total: count || 0,
         page: pageNum,
@@ -71,13 +79,12 @@ export const createUser = async (req: AuthenticatedRequest, res: Response) => {
     }
 
     // Check if user already exists
-    const { data: existingUser } = await supabase
-      .from("users")
-      .select("id")
-      .eq("username", username)
-      .maybeSingle();
+    const existingResult = await pool.query(
+      `SELECT id FROM users WHERE username = $1 LIMIT 1`,
+      [username]
+    );
 
-    if (existingUser) {
+    if (existingResult.rows.length > 0) {
       return res.status(400).json({
         success: false,
         message: "Username is already taken.",
@@ -89,34 +96,26 @@ export const createUser = async (req: AuthenticatedRequest, res: Response) => {
     const password_hash = await bcrypt.hash(password, salt);
 
     // Insert user
-    const { data: newUser, error } = await supabase
-      .from("users")
-      .insert({
-        username,
-        password_hash,
-        fullname,
-        role,
-        status: "Active",
-      })
-      .select("id, username, fullname, role, status, created_at")
-      .single();
-
-    if (error) {
-      return res.status(500).json({
-        success: false,
-        message: "Failed to create user.",
-        error,
-      });
-    }
+    const insertResult = await pool.query(
+      `INSERT INTO users (username, password_hash, fullname, role, status)
+       VALUES ($1, $2, $3, $4, 'Active')
+       RETURNING id, username, fullname, role, status, created_at`,
+      [username, password_hash, fullname, role]
+    );
+    const newUser = insertResult.rows[0];
 
     // Log in audit logs
-    await supabase.from("audit_logs").insert({
-      user_id: req.user?.id,
-      username: req.user?.username || "System",
-      action: "USER_CREATE",
-      details: `Created user ${username} with role ${role}`,
-      ip_address: req.ip,
-    });
+    await pool.query(
+      `INSERT INTO audit_logs (user_id, username, action, details, ip_address)
+       VALUES ($1, $2, $3, $4, $5)`,
+      [
+        req.user?.id || null,
+        req.user?.username || "System",
+        "USER_CREATE",
+        `Created user ${username} with role ${role}`,
+        req.ip,
+      ]
+    );
 
     return res.status(201).json({
       success: true,
@@ -146,29 +145,33 @@ export const updateUser = async (req: AuthenticatedRequest, res: Response) => {
     }
 
     // Update user
-    const { data: updatedUser, error } = await supabase
-      .from("users")
-      .update({ fullname, role })
-      .eq("id", id)
-      .select("id, username, fullname, role, status")
-      .single();
+    const updateResult = await pool.query(
+      `UPDATE users SET fullname = $1, role = $2
+       WHERE id = $3
+       RETURNING id, username, fullname, role, status`,
+      [fullname, role, id]
+    );
+    const updatedUser = updateResult.rows[0];
 
-    if (error) {
-      return res.status(500).json({
+    if (!updatedUser) {
+      return res.status(404).json({
         success: false,
-        message: "Failed to update user.",
-        error,
+        message: "User not found.",
       });
     }
 
     // Log in audit logs
-    await supabase.from("audit_logs").insert({
-      user_id: req.user?.id,
-      username: req.user?.username || "System",
-      action: "USER_UPDATE",
-      details: `Updated user ${updatedUser.username}. Role: ${role}, Name: ${fullname}`,
-      ip_address: req.ip,
-    });
+    await pool.query(
+      `INSERT INTO audit_logs (user_id, username, action, details, ip_address)
+       VALUES ($1, $2, $3, $4, $5)`,
+      [
+        req.user?.id || null,
+        req.user?.username || "System",
+        "USER_UPDATE",
+        `Updated user ${updatedUser.username}. Role: ${role}, Name: ${fullname}`,
+        req.ip,
+      ]
+    );
 
     return res.status(200).json({
       success: true,
@@ -205,29 +208,33 @@ export const updateStatus = async (req: AuthenticatedRequest, res: Response) => 
     }
 
     // Update status
-    const { data: updatedUser, error } = await supabase
-      .from("users")
-      .update({ status })
-      .eq("id", id)
-      .select("id, username, status")
-      .single();
+    const updateResult = await pool.query(
+      `UPDATE users SET status = $1
+       WHERE id = $2
+       RETURNING id, username, status`,
+      [status, id]
+    );
+    const updatedUser = updateResult.rows[0];
 
-    if (error) {
-      return res.status(500).json({
+    if (!updatedUser) {
+      return res.status(404).json({
         success: false,
-        message: "Failed to update user status.",
-        error,
+        message: "User not found.",
       });
     }
 
     // Log in audit logs
-    await supabase.from("audit_logs").insert({
-      user_id: req.user?.id,
-      username: req.user?.username || "System",
-      action: status === "Suspended" ? "USER_SUSPEND" : "USER_ACTIVATE",
-      details: `${status === "Suspended" ? "Suspended" : "Activated"} user ${updatedUser.username}`,
-      ip_address: req.ip,
-    });
+    await pool.query(
+      `INSERT INTO audit_logs (user_id, username, action, details, ip_address)
+       VALUES ($1, $2, $3, $4, $5)`,
+      [
+        req.user?.id || null,
+        req.user?.username || "System",
+        status === "Suspended" ? "USER_SUSPEND" : "USER_ACTIVATE",
+        `${status === "Suspended" ? "Suspended" : "Activated"} user ${updatedUser.username}`,
+        req.ip,
+      ]
+    );
 
     return res.status(200).json({
       success: true,
@@ -261,29 +268,33 @@ export const resetPassword = async (req: AuthenticatedRequest, res: Response) =>
     const password_hash = await bcrypt.hash(password, salt);
 
     // Update password
-    const { data: updatedUser, error } = await supabase
-      .from("users")
-      .update({ password_hash })
-      .eq("id", id)
-      .select("id, username")
-      .single();
+    const updateResult = await pool.query(
+      `UPDATE users SET password_hash = $1
+       WHERE id = $2
+       RETURNING id, username`,
+      [password_hash, id]
+    );
+    const updatedUser = updateResult.rows[0];
 
-    if (error) {
-      return res.status(500).json({
+    if (!updatedUser) {
+      return res.status(404).json({
         success: false,
-        message: "Failed to reset password.",
-        error,
+        message: "User not found.",
       });
     }
 
     // Log in audit logs
-    await supabase.from("audit_logs").insert({
-      user_id: req.user?.id,
-      username: req.user?.username || "System",
-      action: "USER_PASSWORD_RESET",
-      details: `Reset password for user ${updatedUser.username}`,
-      ip_address: req.ip,
-    });
+    await pool.query(
+      `INSERT INTO audit_logs (user_id, username, action, details, ip_address)
+       VALUES ($1, $2, $3, $4, $5)`,
+      [
+        req.user?.id || null,
+        req.user?.username || "System",
+        "USER_PASSWORD_RESET",
+        `Reset password for user ${updatedUser.username}`,
+        req.ip,
+      ]
+    );
 
     return res.status(200).json({
       success: true,
@@ -311,11 +322,11 @@ export const deleteUser = async (req: AuthenticatedRequest, res: Response) => {
     }
 
     // Get username before delete for audit logging
-    const { data: userToDelete } = await supabase
-      .from("users")
-      .select("username")
-      .eq("id", id)
-      .single();
+    const userResult = await pool.query(
+      `SELECT username FROM users WHERE id = $1 LIMIT 1`,
+      [id]
+    );
+    const userToDelete = userResult.rows[0];
 
     if (!userToDelete) {
       return res.status(404).json({
@@ -325,27 +336,20 @@ export const deleteUser = async (req: AuthenticatedRequest, res: Response) => {
     }
 
     // Delete user
-    const { error } = await supabase
-      .from("users")
-      .delete()
-      .eq("id", id);
-
-    if (error) {
-      return res.status(500).json({
-        success: false,
-        message: "Failed to delete user.",
-        error,
-      });
-    }
+    await pool.query(`DELETE FROM users WHERE id = $1`, [id]);
 
     // Log in audit logs
-    await supabase.from("audit_logs").insert({
-      user_id: req.user?.id,
-      username: req.user?.username || "System",
-      action: "USER_DELETE",
-      details: `Deleted user account: ${userToDelete.username}`,
-      ip_address: req.ip,
-    });
+    await pool.query(
+      `INSERT INTO audit_logs (user_id, username, action, details, ip_address)
+       VALUES ($1, $2, $3, $4, $5)`,
+      [
+        req.user?.id || null,
+        req.user?.username || "System",
+        "USER_DELETE",
+        `Deleted user account: ${userToDelete.username}`,
+        req.ip,
+      ]
+    );
 
     return res.status(200).json({
       success: true,

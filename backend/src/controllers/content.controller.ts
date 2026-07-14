@@ -1,5 +1,5 @@
 import { Response } from "express";
-import { supabase } from "../config/supabase";
+import pool from "../config/db";
 import { AuthenticatedRequest } from "../middleware/auth";
 
 // Get content by key
@@ -7,19 +7,11 @@ export const getContent = async (req: AuthenticatedRequest, res: Response) => {
   try {
     const { key } = req.params;
 
-    const { data, error } = await supabase
-      .from("website_content")
-      .select("*")
-      .eq("key", key)
-      .maybeSingle();
-
-    if (error) {
-      return res.status(500).json({
-        success: false,
-        message: "Database error.",
-        error,
-      });
-    }
+    const result = await pool.query(
+      `SELECT * FROM website_content WHERE key = $1 LIMIT 1`,
+      [key]
+    );
+    const data = result.rows[0];
 
     if (!data) {
       return res.status(200).json({
@@ -54,32 +46,27 @@ export const updateContent = async (req: AuthenticatedRequest, res: Response) =>
       });
     }
 
-    const { data, error } = await supabase
-      .from("website_content")
-      .upsert({
-        key,
-        value,
-        updated_at: new Date().toISOString(),
-      })
-      .select("*")
-      .single();
-
-    if (error) {
-      return res.status(500).json({
-        success: false,
-        message: "Failed to update website content.",
-        error,
-      });
-    }
+    const upsertResult = await pool.query(
+      `INSERT INTO website_content (key, value, updated_at)
+       VALUES ($1, $2, $3)
+       ON CONFLICT (key) DO UPDATE SET value = $2, updated_at = $3
+       RETURNING *`,
+      [key, JSON.stringify(value), new Date().toISOString()]
+    );
+    const data = upsertResult.rows[0];
 
     // Log action in audit logs
-    await supabase.from("audit_logs").insert({
-      user_id: req.user?.id,
-      username: req.user?.username || "System",
-      action: "CONTENT_UPDATE",
-      details: `Updated website content key: "${key}"`,
-      ip_address: req.ip,
-    });
+    await pool.query(
+      `INSERT INTO audit_logs (user_id, username, action, details, ip_address)
+       VALUES ($1, $2, $3, $4, $5)`,
+      [
+        req.user?.id || null,
+        req.user?.username || "System",
+        "CONTENT_UPDATE",
+        `Updated website content key: "${key}"`,
+        req.ip,
+      ]
+    );
 
     return res.status(200).json({
       success: true,

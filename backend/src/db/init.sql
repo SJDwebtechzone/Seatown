@@ -82,3 +82,11 @@ create index if not exists idx_review_status on review(status);
 create index if not exists idx_contact_inquiries_status on contact_inquiries(status);
 create index if not exists idx_audit_logs_user_id on audit_logs(user_id);
 create index if not exists idx_audit_logs_created_at on audit_logs(created_at desc);
+
+
+CREATE TABLE public.website_content (
+  key text NOT NULL,
+  value jsonb NOT NULL,
+  updated_at timestamp with time zone NOT NULL DEFAULT timezone('utc'::text, now()),
+  CONSTRAINT website_content_pkey PRIMARY KEY (key)
+) TABLESPACE pg_default;

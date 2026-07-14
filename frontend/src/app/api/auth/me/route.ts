@@ -2,10 +2,12 @@ import { NextResponse } from "next/server";
 
 export async function GET(req: Request) {
   try {
-    const token = req.headers.get("cookie")
-      ?.split(";")
-      .find((c) => c.trim().startsWith("token="))
-      ?.split("=")[1];
+const cookieHeader = req.headers.get("cookie");
+const token = cookieHeader
+  ?.split(";")
+  .map((c) => c.trim())
+  .find((c) => c.startsWith("token="))
+  ?.slice("token=".length);
 
     if (!token) {
       return NextResponse.json({ success: false, message: "No token found" }, { status: 401 });
@@ -14,6 +16,7 @@ export async function GET(req: Request) {
     const response = await fetch("http://localhost:5000/api/auth/me", {
       method: "GET",
       headers: {
+        
         Authorization: `Bearer ${token}`,
       },
     });

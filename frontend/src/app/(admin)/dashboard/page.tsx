@@ -1,8 +1,7 @@
 import "../../../globals.css";
+import { redirect } from "next/navigation";
 export default function AdminDashboard() {
-  return (
-    <div>
-      <h1>Dashboard</h1>
-    </div>
-  );
+ 
+       redirect("/dashboard/users");
+
 }

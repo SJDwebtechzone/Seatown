@@ -13,6 +13,16 @@
   --card-border: rgba(255, 255, 255, 0.4);
 }
 
+/* @theme {
+  --color-primary: var(--primary);
+  --color-primary-hover: var(--primary-hover);
+  --color-secondary: var(--secondary);
+  --color-secondary-hover: var(--secondary-hover);
+  --color-accent: var(--accent);
+  --color-accent-hover: var(--accent-hover);
+  --color-card-bg: var(--card-bg);
+  --color-card-border: var(--card-border);
+} */
 @theme {
   --color-primary: var(--primary);
   --color-primary-hover: var(--primary-hover);
@@ -22,6 +32,9 @@
   --color-accent-hover: var(--accent-hover);
   --color-card-bg: var(--card-bg);
   --color-card-border: var(--card-border);
+
+  /* --font-display: var(--font-space-grotesk), sans-serif; */
+
 }
 
 /* Custom base styles */
@@ -33,7 +46,7 @@ html {
 body {
   background: var(--background);
   color: var(--foreground);
-  font-family: var(--font-Playfair_Display), sans-serif;
+  font-family: var(--font-space-grotesk), sans-serif; 
   overflow-x: hidden;
 }
 

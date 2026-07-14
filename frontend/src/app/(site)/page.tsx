@@ -330,8 +330,75 @@ export default function Home() {
     <div className="w-full flex flex-col">
       {/* SECTION 1 - HERO BANNER */}
       {/* SECTION 1 - HERO BANNER & STATS BAR */}
+    {/* SECTION 1 - HERO BANNER & STATS BAR */}
+      {/* SECTION 1 - HERO BANNER & STATS BAR */}
+    {/* SECTION 1 - HERO BANNER & STATS BAR */}
+   {/* SECTION 1 - HERO BANNER & STATS BAR */}
+      
+      {/* ── MOBILE / TABLET HERO (below lg) ── */}
+ <section className="lg:hidden relative bg-white pt-28 pb-10 overflow-hidden text-primary">
+        {/* Subtle grid overlay */}
+        <div className="absolute inset-0 pointer-events-none z-0" 
+             style={{ 
+               backgroundImage: "radial-gradient(rgba(193, 147, 63, 0.15) 1px, transparent 1px)", 
+               backgroundSize: "32px 32px" 
+             }} 
+        />
+
+        <div className="max-w-xl mx-auto px-4 sm:px-6 relative z-10">
+          {/* Ship image showcase — comes first now */}
+          <div className="relative w-full h-[220px] sm:h-[280px] rounded-3xl overflow-hidden shadow-xl mb-8">
+            <Image
+              src="/banners/home.png"
+              alt="Seatown container ship"
+              fill
+              className="object-cover"
+              priority
+            />
+          </div>
+
+          {/* NEXT GEN LABEL */}
+          <div className="flex items-center gap-2 mb-4">
+            <span className="w-6 h-[2px] bg-[#C1933F]" />
+            <span className="font-display text-accent text-[11px] font-black tracking-[0.15em] uppercase">
+              NEXT GEN MARITIME LOGISTICS
+            </span>
+          </div>
+
+          {/* HEADING */}
+          <h1 className="font-display text-[28px] sm:text-[34px] font-black leading-[1.15] mb-4 tracking-tight text-primary">
+            Connecting Global Trade <span className="text-primary">Across</span>{" "}
+            {/* <span className="text-[#C1933F]">Oceans & Borders</span> */}
+            <span className="text-primary">Oceans & Borders</span>
+          </h1>
+
+          <p className="font-display text-gray-600 font-semibold text-sm mb-6 leading-relaxed">
+            Seatown Container Line links major global markets with certified container shipping services, custom clearance networks, and premium cargo care.
+          </p>
+
+          {/* Action Buttons */}
+          <div className="flex flex-col gap-3">
+            <Link
+              href="/contact?quote=1"
+              className="bg-[#C1933F] hover:brightness-110 text-white pl-8 pr-6 py-3.5 rounded-full font-bold uppercase tracking-widest text-[11px] shadow-lg transition-all flex items-center justify-center gap-2 group w-full"
+            >
+              Get Quote
+              <ArrowRight className="w-4 h-4 group-hover:translate-x-0.5 transition-transform" />
+            </Link>
+            <Link
+              href="/services"
+              className="bg-white border border-primary hover:bg-gray-50 text-primary pl-8 pr-6 py-3.5 rounded-full font-bold uppercase tracking-widest text-[11px] transition-all flex items-center justify-center gap-2 shadow-sm w-full"
+            >
+              Explore Services
+              <Ship className="w-4 h-4 text-primary" />
+            </Link>
+          </div>
+        </div>
+      </section>
+
+      {/* ── DESKTOP HERO (lg and up) ── */}
       <section 
-        className="relative min-h-[96vh] flex flex-col justify-between bg-white pt-32 pb-0 overflow-hidden text-primary"
+        className="hidden lg:flex relative min-h-[96vh] flex-col justify-between bg-white pt-32 pb-0 overflow-hidden text-primary"
         style={{
           backgroundImage: "linear-gradient(to right, rgba(255,255,255,0.85) 0%, rgba(255,255,255,0.6) 35%, rgba(255,255,255,0) 60%), url('/banners/home.png')",
           backgroundSize: "cover",
@@ -347,8 +414,6 @@ export default function Home() {
              }} 
         />
 
-
-
         {/* Hero Content Area */}
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-20 w-full flex-grow flex items-center mt-12">
           <div className="grid grid-cols-1 lg:grid-cols-12 gap-12 w-full">
@@ -356,19 +421,19 @@ export default function Home() {
               {/* NEXT GEN LABEL */}
               <div className="flex items-center gap-3 mb-6">
                 <span className="w-8 h-[2px] bg-[#C1933F]" />
-                <span className="text-accent text-sm md:text-base font-black tracking-[0.2em] uppercase">
+                <span className="font-display text-accent text-sm md:text-base font-black tracking-[0.2em] uppercase">
                   NEXT GEN MARITIME LOGISTICS
                 </span>
               </div>
 
               {/* HEADING (matching mock layout) */}
-              <h1 className="text-[38px] sm:text-[48px] lg:text-[58px] font-black leading-[1.08] mb-6 tracking-tight text-primary">
+              <h1 className="font-display text-[38px] sm:text-[48px] lg:text-[58px] font-black leading-[1.08] mb-6 tracking-tight text-primary">
                 Connecting Global <br />
                 Trade <span className="text-primary">Across</span> <br />
-                <span className="text-[#C1933F]">Oceans & Borders</span>
+                <span className="text-primary">Oceans & Borders</span>
               </h1>
 
-              <p className="text-gray-600 font-semibold text-sm sm:text-base mb-8 leading-relaxed max-w-lg">
+              <p className="font-display text-justify text-gray-600 font-semibold text-sm sm:text-base mb-8 leading-relaxed max-w-lg">
                 Seatown Container Line links major global markets with certified container shipping services, custom clearance networks, and premium cargo care.
               </p>
 
@@ -393,7 +458,6 @@ export default function Home() {
           </div>
         </div>
 
-
       </section>
 
       {/* SECTION 3 - PREMIUM SPLIT-SCREEN ABOUT */}
@@ -412,14 +476,14 @@ export default function Home() {
           {/* Top content */}
           <div className="relative z-10">
             <span className="text-accent text-sm md:text-base font-black uppercase tracking-[0.22em] mb-4 flex items-center gap-2">
-              <span className="w-8 h-[2px] bg-accent" />
+              <span className="font-display w-8 h-[2px] bg-accent" />
               Global Trade Connections
             </span>
-            <h2 className="text-3xl md:text-4xl font-black text-primary leading-tight mb-3">
-              Strong Routes.<br />
-              Stronger <span className="text-accent">Partnerships.</span>
-            </h2>
-            <p className="text-gray-600 text-sm font-semibold leading-relaxed max-w-xs">
+           <h2 className="font-display text-3xl md:text-4xl font-black text-primary leading-tight mb-3">
+  Strong Routes.<br />
+  Stronger <span className="text-accent">Partnerships.</span>
+</h2>
+            <p className="text-justify text-gray-600 text-sm font-semibold leading-relaxed max-w-xs">
               Connecting Chennai to key global ports with speed, reliability &amp; trust.
             </p>
           </div>
@@ -450,21 +514,21 @@ export default function Home() {
     <div className="absolute inset-0 bg-[url('https://upload.wikimedia.org/wikipedia/commons/8/80/World_map_-_low_resolution.svg')] bg-no-repeat bg-center bg-cover opacity-[0.03] mix-blend-multiply" />
   </div>
           <span className="text-accent text-sm md:text-base font-black uppercase tracking-[0.22em] mb-4 flex items-center gap-2">
-            <span className="w-8 h-[2px] bg-accent" />
+            <span className="font-display w-8 h-[2px] bg-accent" />
             About Seatown Preview
           </span>
           
-          <h2 className="text-3xl md:text-4xl font-black text-primary leading-tight mb-4">
+          <h2 className="font-display text-3xl md:text-4xl font-black text-primary leading-tight mb-3">
             Your Trusted Logistics Partner<br />
             Across <span className="text-accent">The Globe</span>
           </h2>
 
           <div className="w-10 h-[3px] bg-accent rounded-full mb-6" />
 
-          <p className="text-gray-600 text-base leading-relaxed mb-3">
+          <p className="text-justify text-gray-600 text-base leading-relaxed mb-3">
             Seatown Container Line Pvt Ltd is a leading NVOCC and integrated logistics provider, delivering tailored shipping solutions that connect businesses to global markets.
           </p>
-          <p className="text-gray-600 text-base leading-relaxed mb-8">
+          <p className=" text-justify text-gray-600 text-base leading-relaxed mb-8">
             With a commitment to reliability, transparency, and operational excellence, we ensure your cargo reaches every destination—safely and on time.
           </p>
 
@@ -476,7 +540,7 @@ export default function Home() {
               { icon: Box, title: 'Diverse Solutions', desc: 'From general cargo to project shipments, we handle it all.' },
               { icon: Users, title: 'Customer Focused', desc: 'Personalized support and 24/7 assistance at every step.' },
             ].map((feat, i) => (
-              <div key={i} className="bg-gray-50 border border-gray-100 rounded-2xl p-5 md:p-6 flex flex-col gap-3 hover:border-accent/30 hover:shadow-sm transition-all duration-300">
+              <div key={i} className="font-display text-justify bg-gray-50 border border-gray-100 rounded-2xl p-5 md:p-6 flex flex-col gap-3 hover:border-accent/30 hover:shadow-sm transition-all duration-300">
                 <div className="p-2.5 bg-accent/10 rounded-xl w-fit">
                   <feat.icon className="w-5 h-5 text-accent" />
                 </div>
@@ -490,7 +554,7 @@ export default function Home() {
           <div className="flex flex-wrap items-center justify-center gap-4">
             <Link
               href="/about"
-              className="flex items-center gap-2 w-fit bg-accent hover:brightness-110 text-white pl-8 pr-6 py-3.5 rounded-full font-bold uppercase tracking-widest text-[11px] shadow-lg transition-all group"
+              className="font-display flex items-center gap-2 w-fit bg-accent hover:brightness-110 text-white pl-8 pr-6 py-3.5 rounded-full font-bold uppercase tracking-widest text-[11px] shadow-lg transition-all group"
             >
               Discover More About Us
               <ArrowRight className="w-4 h-4 group-hover:translate-x-0.5 transition-transform" />
@@ -500,7 +564,7 @@ export default function Home() {
         
       </section>
       {/* Stats Bar */}
-          <div className="relative z-10 grid grid-cols-4 gap-2 bg-white border border-gray-100 rounded-2xl px-3 py-4 shadow-sm mt-4">
+          <div className=" font-display relative z-10 grid grid-cols-4 gap-2 bg-white border border-gray-100 rounded-2xl px-3 py-4 shadow-sm mt-4">
             {[
               { icon: Globe, end: 50, suffix: '+', label: 'Countries Connected' },
               { icon: Ship, end: 10000, suffix: '+', label: 'Shipments Handled' },
@@ -525,15 +589,15 @@ export default function Home() {
           {/* Mockup Styled Header */}
           <div className="flex justify-center items-center gap-2 mb-2">
             <span className="w-6 h-[1.5px] bg-accent" />
-            <span className="text-accent text-sm md:text-base font-black uppercase tracking-[0.2em]">
+            <span className=" font-display text-accent text-sm md:text-base font-black uppercase tracking-[0.2em]">
               OUR SERVICES
             </span>
             <span className="w-6 h-[1.5px] bg-accent" />
           </div>
-          <h2 className="text-3xl md:text-4xl font-black text-primary mt-1 mb-3">
+          <h2 className="font-display text-3xl md:text-4xl font-black text-primary leading-tight mb-3">
             Integrated Global <span className="text-accent">Logistics Solutions</span>
           </h2>
-          <p className="text-gray-500 text-sm font-semibold max-w-xl mx-auto mb-16 leading-relaxed">
+          <p className="font-display text-gray-500 text-sm font-semibold max-w-xl mx-auto mb-16 leading-relaxed">
             End-to-end logistics solutions designed to move your business forward. <br />
             Reliable. Efficient. Global.
           </p>
@@ -563,14 +627,14 @@ export default function Home() {
                       <IconComponent className="w-5 h-5" />
                     </div>
                     <div className="flex-grow min-w-0">
-                      <span className={`block text-[11px] font-mono font-bold tracking-wider ${isActive ? "text-accent" : "text-gray-400"}`}>
+                      <span className={`font-display block text-[11px]  font-bold tracking-wider ${isActive ? "text-accent" : "text-gray-400"}`}>
                         SERVICE {svc.id}
                       </span>
-                      <h3 className={`font-black text-sm lg:text-base leading-tight mt-0.5 truncate ${isActive ? "text-primary" : "text-gray-700"}`}>
+                      <h3 className={`font-display font-black text-sm lg:text-base leading-tight mt-0.5 truncate ${isActive ? "text-primary" : "text-gray-700"}`}>
                         {svc.title}
                       </h3>
                     </div>
-                    <ArrowRight className={`w-4 h-4 shrink-0 transition-transform duration-300 ${
+                    <ArrowRight className={`font-display w-4 h-4 shrink-0 transition-transform duration-300 ${
                       isActive ? "text-accent translate-x-1" : "text-gray-300"
                     }`} />
                   </button>
@@ -590,10 +654,10 @@ export default function Home() {
                       animate={{ opacity: 1, y: 0 }}
                       exit={{ opacity: 0, y: -15 }}
                       transition={{ duration: 0.35, ease: "easeOut" }}
-                      className="bg-white border border-gray-100 rounded-3xl overflow-hidden shadow-md flex flex-col h-full"
+                      className="font-display bg-white border border-gray-100 rounded-3xl overflow-hidden shadow-md flex flex-col h-full"
                     >
                       {/* Image */}
-                      <div className="h-56 sm:h-64 lg:h-72 w-full relative overflow-hidden bg-gray-50 group">
+                      <div className="font-display h-56 sm:h-64 lg:h-72 w-full relative overflow-hidden bg-gray-50 group">
                         <Image
                           src={svc.img}
                           alt={svc.title}
@@ -606,7 +670,7 @@ export default function Home() {
                         </div>
                         <div className="absolute inset-0 bg-gradient-to-t from-black/50 via-transparent to-transparent opacity-85" />
                         <div className="absolute bottom-4 right-4 sm:bottom-6 sm:right-6 bg-white/10 backdrop-blur-md border border-white/15 px-3 py-1 sm:px-4 sm:py-1.5 rounded-full">
-                          <span className="text-white font-mono text-[10px] sm:text-xs font-black tracking-widest">
+                          <span className="font-display text-white  text-[10px] sm:text-xs font-black tracking-widest">
                             SEATOWN LOGISTICS
                           </span>
                         </div>
@@ -624,10 +688,10 @@ export default function Home() {
                               Tailored Solutions
                             </span>
                           </div>
-                          <h3 className="font-black text-xl sm:text-2xl lg:text-3xl text-primary mb-3 sm:mb-4">
+                          <h3 className="font-display text-3xl md:text-4xl font-black text-primary leading-tight mb-3">
                             {svc.title}
                           </h3>
-                          <p className="text-gray-600 text-sm sm:text-base leading-relaxed mb-6 font-medium">
+                          <p className="font-display text-gray-600 text-sm sm:text-base leading-relaxed mb-6 font-medium">
                             {svc.desc}
                           </p>
 
@@ -677,7 +741,7 @@ export default function Home() {
               Asset Options
               <span className="w-8 h-[2px] bg-accent" />
             </span>
-            <h2 className="text-3xl font-extrabold text-primary mt-2">
+            <h2 className="font-display text-3xl md:text-4xl font-black text-primary leading-tight mb-3">
               Interactive Container Fleet Specifications
             </h2>
             <p className="text-gray-500 text-sm font-semibold mt-1">
@@ -693,14 +757,14 @@ export default function Home() {
                 <button
                   key={type.id}
                   onClick={() => setSelectedContainer(type.id)}
-                  className={`text-left px-6 py-4 rounded-full border transition-all duration-300 flex items-center justify-between group shadow-sm ${
+                  className={`font-display text-left px-6 py-4 rounded-full border transition-all duration-300 flex items-center justify-between group shadow-sm ${
                     selectedContainer === type.id
                       ? "bg-accent text-white border-accent shadow-md scale-[1.02]"
                       : "bg-white text-primary hover:bg-gray-50 border-gray-200 hover:border-accent/50"
                   }`}
                 >
-                  <div className="font-bold text-[13px] tracking-wide uppercase">{type.title.split(' - ')[0].split(' (')[0]}</div>
-                  <ChevronRight className={`w-4 h-4 transition-transform ${selectedContainer === type.id ? 'translate-x-1 text-white' : 'text-gray-400 group-hover:translate-x-1 group-hover:text-accent'}`} />
+                  <div className="font-display text-justify font-bold text-[13px] tracking-wide uppercase">{type.title.split(' - ')[0].split(' (')[0]}</div>
+                  <ChevronRight className={`font-display w-4 h-4 transition-transform ${selectedContainer === type.id ? 'translate-x-1 text-white' : 'text-gray-400 group-hover:translate-x-1 group-hover:text-accent'}`} />
                 </button>
               ))}
             </div>
@@ -723,8 +787,8 @@ export default function Home() {
                         <Image src={active.img} alt={active.title} fill className="object-contain drop-shadow-xl" />
                       </div>
                       <div className="mt-auto border-t border-gray-100 pt-6">
-                        <h3 className="text-xl md:text-2xl font-black text-primary mb-2 md:mb-3 truncate">{active.title}</h3>
-                        <p className="text-gray-600 text-base leading-relaxed font-medium line-clamp-4">{active.desc}</p>
+                        <h3 className="font-display text-xl md:text-2xl font-black text-primary mb-2 md:mb-3 truncate">{active.title}</h3>
+                        <p className="text-justify text-gray-600 text-base leading-relaxed font-medium line-clamp-4">{active.desc}</p>
                       </div>
                     </motion.div>
                   </AnimatePresence>
@@ -865,12 +929,11 @@ export default function Home() {
         </div>
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center relative z-10">
           <span className="inline-flex items-center justify-center gap-2 text-accent text-sm md:text-base font-black uppercase tracking-[0.25em]">
-            <span className="w-8 h-[2px] bg-accent" />
+            <span className=" font-display w-8 h-[2px] bg-accent" />
             Corporate Trust
-            <span className="w-8 h-[2px] bg-accent" />
+            <span className=" font-display w-8 h-[2px] bg-accent" />
           </span>
-          <h2 className="text-3xl font-extrabold text-primary mt-2 mb-12 flex flex-wrap items-center justify-center gap-x-3 gap-y-2 leading-tight">
-            Why Select
+          <h2 className="font-display text-3xl md:text-4xl font-black text-primary leading-tight mb-3">    Why Select
             <Image
               src="/logo.png"
               alt="Seatown"
@@ -882,7 +945,7 @@ export default function Home() {
             For Ocean Logistics
           </h2>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-8 lg:gap-12 max-w-5xl mx-auto">
+          <div className="font-display grid grid-cols-1 md:grid-cols-2 gap-8 lg:gap-12 max-w-5xl mx-auto">
             {[
               { title: "Global Reach", desc: "Access to 50+ countries via direct cargo shipping contracts.", icon: Globe },
               { title: "Secure Cargo", desc: "Comprehensive monitoring and ISO container seal protocols.", icon: ShieldCheck },
@@ -891,7 +954,7 @@ export default function Home() {
               { title: "Competitive Pricing", desc: "Transparent, optimized contracts suited for SME and Enterprise.", icon: Anchor },
               { title: "Real-Time Support", desc: "Direct customer service coordinates with global agent networks.", icon: Clock },
             ].map((feature, idx) => (
-              <div key={idx} className="glass-card p-6 rounded-2xl flex items-start gap-4 text-left group">
+              <div key={idx} className="font-display glass-card p-6 rounded-2xl flex items-start gap-4 text-left group">
                 <div className="p-3 bg-accent/5 text-accent rounded-xl group-hover:scale-110 transition-transform duration-300">
                   <feature.icon className="w-5.5 h-5.5 text-accent" />
                 </div>
@@ -933,14 +996,14 @@ export default function Home() {
         {/* Header */}
         <div className="text-center mb-12 relative z-10 px-4">
           <span className="inline-flex items-center gap-2 text-accent text-sm md:text-base font-black uppercase tracking-[0.25em] mb-4">
-            <span className="w-8 h-[2px] bg-accent" />
+            <span className=" font-display w-8 h-[2px] bg-accent" />
             Global Presence
-            <span className="w-8 h-[2px] bg-accent" />
+            <span className=" font-display w-8 h-[2px] bg-accent" />
           </span>
-          <h2 className="text-3xl md:text-4xl font-black text-primary mb-3 leading-tight">
+          <h2 className="font-display text-3xl md:text-4xl font-black text-primary leading-tight mb-3">
             Serving <span className="text-accent">50+ Countries</span> Worldwide
           </h2>
-          <p className="text-gray-500 text-base font-semibold max-w-xl mx-auto">
+          <p className="font-display text-gray-500 text-base font-semibold max-w-xl mx-auto">
             Connecting The World with Reliable Logistics Solutions
           </p>
         </div>
@@ -980,13 +1043,13 @@ export default function Home() {
           const items = [...row1, ...row1, ...row1, ...row1];
           return (
             <div className="overflow-hidden mb-4 relative z-0">
-              <div className="animate-marquee" style={{ display: "flex", gap: "16px" }}>
+              <div className=" font-display animate-marquee" style={{ display: "flex", gap: "16px" }}>
                 {items.map((c, i) => (
                   <div
                     key={i}
                     className="flex items-center gap-3 bg-accent/5 border border-accent/30 shadow-sm hover:border-accent hover:bg-accent/10 rounded-2xl px-5 py-3 shrink-0 transition-all duration-300 group cursor-default"
                   >
-                    <div className="w-11 h-8 rounded-md overflow-hidden border border-gray-200 shadow-sm shrink-0">
+                    <div className="font-display w-11 h-8 rounded-md overflow-hidden border border-gray-200 shadow-sm shrink-0">
                       <Image
                         src={`https://flagcdn.com/w80/${c.code}.png`}
                         alt={c.name}
@@ -1041,7 +1104,7 @@ export default function Home() {
           const items = [...row2, ...row2, ...row2, ...row2];
           return (
             <div className="overflow-hidden relative z-0">
-              <div className="animate-marquee-reverse" style={{ display: "flex", gap: "16px" }}>
+              <div className="font-display animate-marquee-reverse" style={{ display: "flex", gap: "16px" }}>
                 {items.map((c, i) => (
                   <div
                     key={i}
@@ -1057,7 +1120,7 @@ export default function Home() {
                         loading="lazy"
                       />
                     </div>
-                    <span className="text-accent text-[11px] font-bold uppercase tracking-wider whitespace-nowrap transition-colors">
+                    <span className=" font-display text-accent text-[11px] font-bold uppercase tracking-wider whitespace-nowrap transition-colors">
                       {c.name}
                     </span>
                   </div>

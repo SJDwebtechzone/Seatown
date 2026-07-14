@@ -1,5 +1,5 @@
 import { Response } from "express";
-import { supabase } from "../config/supabase";
+import pool from "../config/db";
 import { AuthenticatedRequest } from "../middleware/auth";
 
 // Get all contact inquiries
@@ -10,33 +10,35 @@ export const getContacts = async (req: AuthenticatedRequest, res: Response) => {
     const limitNum = parseInt(limit as string, 10);
     const offset = (pageNum - 1) * limitNum;
 
-    let query = supabase
-      .from("contact_inquiries")
-      .select("*", { count: "exact" });
+    const conditions: string[] = [];
+    const params: any[] = [];
 
     if (status) {
-      query = query.eq("status", status);
+      params.push(status);
+      conditions.push(`status = $${params.length}`);
     }
-
     if (search) {
-      query = query.or(`name.ilike.%${search}%,email.ilike.%${search}%,message.ilike.%${search}%`);
+      params.push(`%${search}%`);
+      const idx = params.length;
+      conditions.push(`(name ILIKE $${idx} OR email ILIKE $${idx} OR message ILIKE $${idx})`);
     }
 
-    const { data: contacts, count, error } = await query
-      .order("created_at", { ascending: false })
-      .range(offset, offset + limitNum - 1);
+    const whereClause = conditions.length > 0 ? `WHERE ${conditions.join(" AND ")}` : "";
 
-    if (error) {
-      return res.status(500).json({
-        success: false,
-        message: "Failed to fetch contact inquiries.",
-        error,
-      });
-    }
+    const countResult = await pool.query(`SELECT COUNT(*) FROM contact_inquiries ${whereClause}`, params);
+    const count = parseInt(countResult.rows[0].count, 10);
+
+    const dataParams = [...params, limitNum, offset];
+    const contactsResult = await pool.query(
+      `SELECT * FROM contact_inquiries ${whereClause}
+       ORDER BY created_at DESC
+       LIMIT $${dataParams.length - 1} OFFSET $${dataParams.length}`,
+      dataParams
+    );
 
     return res.status(200).json({
       success: true,
-      contacts,
+      contacts: contactsResult.rows,
       pagination: {
         total: count || 0,
         page: pageNum,
@@ -59,11 +61,8 @@ export const updateContact = async (req: AuthenticatedRequest, res: Response) =>
     const { id } = req.params;
     const { status, reply_notes } = req.body;
 
-    const { data: currentInquiry } = await supabase
-      .from("contact_inquiries")
-      .select("*")
-      .eq("id", id)
-      .maybeSingle();
+    const currentResult = await pool.query(`SELECT * FROM contact_inquiries WHERE id = $1 LIMIT 1`, [id]);
+    const currentInquiry = currentResult.rows[0];
 
     if (!currentInquiry) {
       return res.status(404).json({
@@ -85,29 +84,29 @@ export const updateContact = async (req: AuthenticatedRequest, res: Response) =>
     if (reply_notes !== undefined) updates.reply_notes = reply_notes;
     updates.updated_at = new Date().toISOString();
 
-    const { data: updatedInquiry, error } = await supabase
-      .from("contact_inquiries")
-      .update(updates)
-      .eq("id", id)
-      .select("*")
-      .single();
+    const keys = Object.keys(updates);
+    const setClauses = keys.map((k, i) => `${k} = $${i + 1}`);
+    const values = keys.map(k => updates[k]);
+    values.push(id);
 
-    if (error) {
-      return res.status(500).json({
-        success: false,
-        message: "Failed to update contact inquiry.",
-        error,
-      });
-    }
+    const updateResult = await pool.query(
+      `UPDATE contact_inquiries SET ${setClauses.join(", ")} WHERE id = $${values.length} RETURNING *`,
+      values
+    );
+    const updatedInquiry = updateResult.rows[0];
 
     // Log action in audit logs
-    await supabase.from("audit_logs").insert({
-      user_id: req.user?.id,
-      username: req.user?.username || "System",
-      action: "CONTACT_UPDATE",
-      details: `Updated contact inquiry from "${updatedInquiry.name}". Status: ${updatedInquiry.status}`,
-      ip_address: req.ip,
-    });
+    await pool.query(
+      `INSERT INTO audit_logs (user_id, username, action, details, ip_address)
+       VALUES ($1, $2, $3, $4, $5)`,
+      [
+        req.user?.id || null,
+        req.user?.username || "System",
+        "CONTACT_UPDATE",
+        `Updated contact inquiry from "${updatedInquiry.name}". Status: ${updatedInquiry.status}`,
+        req.ip,
+      ]
+    );
 
     return res.status(200).json({
       success: true,
@@ -128,11 +127,8 @@ export const deleteContact = async (req: AuthenticatedRequest, res: Response) =>
   try {
     const { id } = req.params;
 
-    const { data: inquiryToDelete } = await supabase
-      .from("contact_inquiries")
-      .select("name")
-      .eq("id", id)
-      .single();
+    const result = await pool.query(`SELECT name FROM contact_inquiries WHERE id = $1 LIMIT 1`, [id]);
+    const inquiryToDelete = result.rows[0];
 
     if (!inquiryToDelete) {
       return res.status(404).json({
@@ -141,27 +137,20 @@ export const deleteContact = async (req: AuthenticatedRequest, res: Response) =>
       });
     }
 
-    const { error } = await supabase
-      .from("contact_inquiries")
-      .delete()
-      .eq("id", id);
-
-    if (error) {
-      return res.status(500).json({
-        success: false,
-        message: "Failed to delete contact inquiry.",
-        error,
-      });
-    }
+    await pool.query(`DELETE FROM contact_inquiries WHERE id = $1`, [id]);
 
     // Log action in audit logs
-    await supabase.from("audit_logs").insert({
-      user_id: req.user?.id,
-      username: req.user?.username || "System",
-      action: "CONTACT_DELETE",
-      details: `Deleted contact inquiry from: "${inquiryToDelete.name}"`,
-      ip_address: req.ip,
-    });
+    await pool.query(
+      `INSERT INTO audit_logs (user_id, username, action, details, ip_address)
+       VALUES ($1, $2, $3, $4, $5)`,
+      [
+        req.user?.id || null,
+        req.user?.username || "System",
+        "CONTACT_DELETE",
+        `Deleted contact inquiry from: "${inquiryToDelete.name}"`,
+        req.ip,
+      ]
+    );
 
     return res.status(200).json({
       success: true,

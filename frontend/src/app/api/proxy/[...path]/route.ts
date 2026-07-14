@@ -40,21 +40,19 @@ async function handleProxy(req: Request, params: { path: string[] }, method: str
     let body = undefined;
     if (method !== "GET" && method !== "HEAD") {
       const contentType = req.headers.get("content-type");
-      if (contentType && contentType.includes("multipart/form-data")) {
-        // Handle multipart data (e.g., file uploads)
-        // We forward the request as-is, letting the browser/fetch handle boundaries
-        const formData = await req.formData();
-        const response = await fetch(targetUrl, {
-          method,
-          headers: {
-            ...headers,
-            "Content-Type": contentType,
-          },
-          body: formData,
-        });
-        const data = await response.json();
-        return NextResponse.json(data, { status: response.status });
-      } else {
+ if (contentType && contentType.includes("multipart/form-data")) {
+  const formData = await req.formData();
+  const response = await fetch(targetUrl, {
+    method,
+    headers: {
+      ...(token ? { Authorization: `Bearer ${token}` } : {}),
+      // no Content-Type here — fetch sets its own correct boundary automatically
+    },
+    body: formData,
+  });
+  const data = await response.json().catch(() => ({}));
+  return NextResponse.json(data, { status: response.status });
+} else {
         body = JSON.stringify(await req.json().catch(() => ({})));
       }
     }

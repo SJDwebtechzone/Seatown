@@ -1,49 +1,46 @@
 import { Response } from "express";
 import { randomUUID } from "crypto";
-import { supabase } from "../config/supabase";
+import fs from "fs";
+import path from "path";
+import pool from "../config/db";
 import { AuthenticatedRequest } from "../middleware/auth";
+
+const MEDIA_UPLOAD_DIR = path.join(__dirname, "..", "..", "uploads", "media");
+
+if (!fs.existsSync(MEDIA_UPLOAD_DIR)) {
+  fs.mkdirSync(MEDIA_UPLOAD_DIR, { recursive: true });
+}
+
+const getMimeType = (filename: string): string => {
+  const ext = filename.split(".").pop()?.toLowerCase();
+  const map: Record<string, string> = {
+    jpg: "image/jpeg", jpeg: "image/jpeg", png: "image/png",
+    gif: "image/gif", webp: "image/webp", pdf: "application/pdf",
+    svg: "image/svg+xml",
+  };
+  return map[ext || ""] || "application/octet-stream";
+};
 
 // List all media files
 export const getMedia = async (req: AuthenticatedRequest, res: Response) => {
   try {
-    const { data, error } = await supabase.storage
-      .from("media")
-      .list("", {
-        limit: 100,
-        sortBy: { column: "created_at", order: "desc" },
-      });
+    const files = fs.readdirSync(MEDIA_UPLOAD_DIR);
 
-    if (error) {
-      // If the bucket doesn't exist, try to create it or return empty
-      if (error.message.includes("not found")) {
-        return res.status(200).json({
-          success: true,
-          media: [],
-          message: "Media bucket not found. Please create a bucket named 'media' in the Supabase storage dashboard.",
-        });
-      }
-      return res.status(500).json({
-        success: false,
-        message: "Failed to list media files.",
-        error,
-      });
-    }
-
-    // Generate public URLs for each file
-    const media = data.map((file) => {
-      const {
-        data: { publicUrl },
-      } = supabase.storage.from("media").getPublicUrl(file.name);
-
-      return {
-        name: file.name,
-        id: file.id,
-        size: file.metadata?.size || 0,
-        mimeType: file.metadata?.mimetype || "image/jpeg",
-        createdAt: file.created_at,
-        url: publicUrl,
-      };
-    });
+    const media = files
+      .map((filename) => {
+        const filePath = path.join(MEDIA_UPLOAD_DIR, filename);
+        const stats = fs.statSync(filePath);
+        return {
+          name: filename,
+          id: filename,
+          size: stats.size,
+          mimeType: getMimeType(filename),
+          createdAt: stats.birthtime,
+          url: `uploads/media/${filename}`,
+        };
+      })
+      .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime())
+      .slice(0, 100);
 
     return res.status(200).json({
       success: true,
@@ -70,35 +67,24 @@ export const uploadMedia = async (req: AuthenticatedRequest, res: Response) => {
 
     const extension = req.file.originalname.split(".").pop();
     const filename = `${randomUUID()}.${extension}`;
+    const filePath = path.join(MEDIA_UPLOAD_DIR, filename);
 
-    const { error: uploadError } = await supabase.storage
-      .from("media")
-      .upload(filename, req.file.buffer, {
-        contentType: req.file.mimetype,
-        cacheControl: "3600",
-        upsert: false,
-      });
+    fs.writeFileSync(filePath, req.file.buffer);
 
-    if (uploadError) {
-      return res.status(500).json({
-        success: false,
-        message: "Failed to upload file to storage.",
-        error: uploadError,
-      });
-    }
-
-    const {
-      data: { publicUrl },
-    } = supabase.storage.from("media").getPublicUrl(filename);
+    const url = `uploads/media/${filename}`;
 
     // Log action in audit logs
-    await supabase.from("audit_logs").insert({
-      user_id: req.user?.id,
-      username: req.user?.username || "System",
-      action: "MEDIA_UPLOAD",
-      details: `Uploaded media file: ${filename} (${req.file.originalname})`,
-      ip_address: req.ip,
-    });
+    await pool.query(
+      `INSERT INTO audit_logs (user_id, username, action, details, ip_address)
+       VALUES ($1, $2, $3, $4, $5)`,
+      [
+        req.user?.id || null,
+        req.user?.username || "System",
+        "MEDIA_UPLOAD",
+        `Uploaded media file: ${filename} (${req.file.originalname})`,
+        req.ip,
+      ]
+    );
 
     return res.status(201).json({
       success: true,
@@ -108,7 +94,7 @@ export const uploadMedia = async (req: AuthenticatedRequest, res: Response) => {
         originalName: req.file.originalname,
         mimeType: req.file.mimetype,
         size: req.file.size,
-        url: publicUrl,
+        url,
       },
     });
   } catch (err) {
@@ -129,31 +115,33 @@ export const deleteMedia = async (req: AuthenticatedRequest, res: Response) => {
       return res.status(400).json({ success: false, message: "File name is required." });
     }
 
-    const { data, error } = await supabase.storage
-      .from("media")
-      .remove([name]);
+    const filePath = path.join(MEDIA_UPLOAD_DIR, name);
 
-    if (error) {
-      return res.status(500).json({
+    if (!fs.existsSync(filePath)) {
+      return res.status(404).json({
         success: false,
-        message: "Failed to delete media file.",
-        error,
+        message: "Media file not found.",
       });
     }
 
+    fs.unlinkSync(filePath);
+
     // Log action in audit logs
-    await supabase.from("audit_logs").insert({
-      user_id: req.user?.id,
-      username: req.user?.username || "System",
-      action: "MEDIA_DELETE",
-      details: `Deleted media file: ${name}`,
-      ip_address: req.ip,
-    });
+    await pool.query(
+      `INSERT INTO audit_logs (user_id, username, action, details, ip_address)
+       VALUES ($1, $2, $3, $4, $5)`,
+      [
+        req.user?.id || null,
+        req.user?.username || "System",
+        "MEDIA_DELETE",
+        `Deleted media file: ${name}`,
+        req.ip,
+      ]
+    );
 
     return res.status(200).json({
       success: true,
       message: "Media file deleted successfully.",
-      data,
     });
   } catch (err) {
     console.error("deleteMedia error:", err);

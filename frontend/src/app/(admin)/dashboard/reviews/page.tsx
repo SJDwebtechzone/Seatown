@@ -27,6 +27,17 @@ interface Review {
   created_at: string;
 }
 
+// FIX: same normalization used everywhere else on the site — a bare
+// relative path (no leading slash, no protocol) resolves against the
+// current page's URL instead of the site root, breaking the image.
+function normalizeImagePath(path: string | null | undefined): string | null {
+  if (!path) return null;
+  if (path.startsWith("/") || path.startsWith("http://") || path.startsWith("https://")) {
+    return path;
+  }
+  return `/${path}`;
+}
+
 export default function ReviewModeration() {
   const { showToast } = useToast();
   const [reviews, setReviews] = useState<Review[]>([]);
@@ -284,98 +295,101 @@ export default function ReviewModeration() {
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-gray-100 text-xs font-semibold text-gray-700">
-                    {reviews.map((review) => (
-                      <tr
-                        key={review.id}
-                        className={`hover:bg-gray-50/50 transition-colors ${
-                          previewReview?.id === review.id ? "bg-accent/5" : ""
-                        }`}
-                      >
-                        <td className="px-6 py-4">
-                          <button
-                            onClick={() => toggleSelect(review.id)}
-                            className="text-gray-400 hover:text-primary cursor-pointer"
-                          >
-                            {selectedIds.includes(review.id) ? (
-                              <CheckSquare size={16} className="text-accent" />
-                            ) : (
-                              <Square size={16} />
-                            )}
-                          </button>
-                        </td>
-                        <td className="px-6 py-4">
-                          <div className="flex items-center gap-3">
-                            <div className="w-9 h-9 rounded-xl overflow-hidden bg-gray-100 shrink-0 border border-gray-200">
-                              {review.image_url ? (
-                                <img
-                                  src={review.image_url}
-                                  alt={review.fullname}
-                                  className="w-full h-full object-cover"
-                                />
+                    {reviews.map((review) => {
+                      const imgSrc = normalizeImagePath(review.image_url);
+                      return (
+                        <tr
+                          key={review.id}
+                          className={`hover:bg-gray-50/50 transition-colors ${
+                            previewReview?.id === review.id ? "bg-accent/5" : ""
+                          }`}
+                        >
+                          <td className="px-6 py-4">
+                            <button
+                              onClick={() => toggleSelect(review.id)}
+                              className="text-gray-400 hover:text-primary cursor-pointer"
+                            >
+                              {selectedIds.includes(review.id) ? (
+                                <CheckSquare size={16} className="text-accent" />
                               ) : (
-                                <div className="w-full h-full flex items-center justify-center font-black text-primary bg-primary/5">
-                                  {review.fullname.charAt(0)}
-                                </div>
+                                <Square size={16} />
                               )}
-                            </div>
-                            <div>
-                              <p className="font-extrabold text-primary">{review.fullname}</p>
-                              <p className="text-gray-400 text-[9px] font-bold uppercase tracking-wider">
-                                {review.role}
-                              </p>
-                            </div>
-                          </div>
-                        </td>
-                        <td className="px-6 py-4 max-w-xs">
-                          <p className="line-clamp-2 text-gray-500 font-medium">"{review.review}"</p>
-                        </td>
-                        <td className="px-6 py-4 text-right">
-                          <div className="flex justify-end gap-1">
-                            <button
-                              onClick={() => setPreviewReview(review)}
-                              className="w-8 h-8 rounded-lg hover:bg-gray-100 flex items-center justify-center text-gray-400 hover:text-primary cursor-pointer"
-                              title="Preview Testimonial"
-                            >
-                              <Eye size={14} />
                             </button>
-                            {statusTab !== "Approved" && (
+                          </td>
+                          <td className="px-6 py-4">
+                            <div className="flex items-center gap-3">
+                              <div className="w-9 h-9 rounded-xl overflow-hidden bg-gray-100 shrink-0 border border-gray-200">
+                                {imgSrc ? (
+                                  <img
+                                    src={imgSrc}
+                                    alt={review.fullname}
+                                    className="w-full h-full object-cover"
+                                  />
+                                ) : (
+                                  <div className="w-full h-full flex items-center justify-center font-black text-primary bg-primary/5">
+                                    {review.fullname.charAt(0)}
+                                  </div>
+                                )}
+                              </div>
+                              <div>
+                                <p className="font-extrabold text-primary">{review.fullname}</p>
+                                <p className="text-gray-400 text-[9px] font-bold uppercase tracking-wider">
+                                  {review.role}
+                                </p>
+                              </div>
+                            </div>
+                          </td>
+                          <td className="px-6 py-4 max-w-xs">
+                            <p className="line-clamp-2 text-gray-500 font-medium">"{review.review}"</p>
+                          </td>
+                          <td className="px-6 py-4 text-right">
+                            <div className="flex justify-end gap-1">
                               <button
-                                onClick={() => handleUpdateStatus(review.id, "Approved")}
-                                className="w-8 h-8 rounded-lg hover:bg-green-50 flex items-center justify-center text-gray-400 hover:text-green-600 cursor-pointer"
-                                title="Approve Review"
+                                onClick={() => setPreviewReview(review)}
+                                className="w-8 h-8 rounded-lg hover:bg-gray-100 flex items-center justify-center text-gray-400 hover:text-primary cursor-pointer"
+                                title="Preview Testimonial"
                               >
-                                <CheckCircle size={14} />
+                                <Eye size={14} />
                               </button>
-                            )}
-                            {statusTab !== "Rejected" && (
+                              {statusTab !== "Approved" && (
+                                <button
+                                  onClick={() => handleUpdateStatus(review.id, "Approved")}
+                                  className="w-8 h-8 rounded-lg hover:bg-green-50 flex items-center justify-center text-gray-400 hover:text-green-600 cursor-pointer"
+                                  title="Approve Review"
+                                >
+                                  <CheckCircle size={14} />
+                                </button>
+                              )}
+                              {statusTab !== "Rejected" && (
+                                <button
+                                  onClick={() => handleUpdateStatus(review.id, "Rejected")}
+                                  className="w-8 h-8 rounded-lg hover:bg-yellow-50 flex items-center justify-center text-gray-400 hover:text-yellow-600 cursor-pointer"
+                                  title="Reject Review"
+                                >
+                                  <XCircle size={14} />
+                                </button>
+                              )}
+                              {statusTab !== "Spam" && (
+                                <button
+                                  onClick={() => handleUpdateStatus(review.id, "Spam")}
+                                  className="w-8 h-8 rounded-lg hover:bg-purple-50 flex items-center justify-center text-gray-400 hover:text-purple-600 cursor-pointer"
+                                  title="Mark as Spam"
+                                >
+                                  <AlertTriangle size={14} />
+                                </button>
+                              )}
                               <button
-                                onClick={() => handleUpdateStatus(review.id, "Rejected")}
-                                className="w-8 h-8 rounded-lg hover:bg-yellow-50 flex items-center justify-center text-gray-400 hover:text-yellow-600 cursor-pointer"
-                                title="Reject Review"
+                                onClick={() => handleDelete(review.id)}
+                                className="w-8 h-8 rounded-lg hover:bg-red-50 flex items-center justify-center text-gray-400 hover:text-red-600 cursor-pointer"
+                                title="Delete Review"
                               >
-                                <XCircle size={14} />
+                                <Trash2 size={14} />
                               </button>
-                            )}
-                            {statusTab !== "Spam" && (
-                              <button
-                                onClick={() => handleUpdateStatus(review.id, "Spam")}
-                                className="w-8 h-8 rounded-lg hover:bg-purple-50 flex items-center justify-center text-gray-400 hover:text-purple-600 cursor-pointer"
-                                title="Mark as Spam"
-                              >
-                                <AlertTriangle size={14} />
-                              </button>
-                            )}
-                            <button
-                              onClick={() => handleDelete(review.id)}
-                              className="w-8 h-8 rounded-lg hover:bg-red-50 flex items-center justify-center text-gray-400 hover:text-red-600 cursor-pointer"
-                              title="Delete Review"
-                            >
-                              <Trash2 size={14} />
-                            </button>
-                          </div>
-                        </td>
-                      </tr>
-                    ))}
+                            </div>
+                          </td>
+                        </tr>
+                      );
+                    })}
                   </tbody>
                 </table>
               </div>
@@ -438,9 +452,9 @@ export default function ReviewModeration() {
                 {/* Reviewer Details */}
                 <div className="flex items-center gap-4 border-t border-gray-100 pt-4 mt-auto">
                   <div className="w-11 h-11 rounded-full overflow-hidden bg-primary/10 border border-primary/5 shrink-0">
-                    {previewReview.image_url ? (
+                    {normalizeImagePath(previewReview.image_url) ? (
                       <img
-                        src={previewReview.image_url}
+                        src={normalizeImagePath(previewReview.image_url)!}
                         alt={previewReview.fullname}
                         className="w-full h-full object-cover"
                       />
