@@ -19,7 +19,7 @@ const app = express();
 app.use(cors({
   origin: [
       "http://localhost:3000",
-      "https://your-project.vercel.app",
+      "https://seatown-frontend.onrender.com",
     ],
     credentials: true,
 }));
