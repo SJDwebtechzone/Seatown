@@ -22,7 +22,13 @@ async function handleProxy(req: Request, params: { path: string[] }, method: str
     
     // Extract query parameters
     const { search } = new URL(req.url);
-    const targetUrl = `http://localhost:5000/api/${pathJoined}${search}`;
+    const API_URL = process.env.NEXT_PUBLIC_API_URL;
+
+if (!API_URL) {
+  throw new Error("NEXT_PUBLIC_API_URL is not defined");
+}
+
+const targetUrl = `${API_URL}/api/${pathJoined}${search}`;
 
     const token = req.headers.get("cookie")
       ?.split(";")
