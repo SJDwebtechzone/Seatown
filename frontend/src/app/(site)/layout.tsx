@@ -1,6 +1,6 @@
-// import type { Metadata } from "next";
+import type { Metadata } from "next";
 import { Playfair_Display, Space_Grotesk } from "next/font/google";
-import "../../globals.css";
+import "../../globals.css"
 import Header from "@/components/Header";
 import Footer from "@/components/Footer";
 import LoadingScreen from "@/components/LoadingScreen";
