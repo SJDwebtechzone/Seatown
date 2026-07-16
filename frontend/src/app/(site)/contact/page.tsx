@@ -105,12 +105,15 @@ export default function Contact() {
                 <div className="w-full flex flex-col gap-5 relative z-0">
                   <div>
                     <p className="text-xs font-bold uppercase tracking-wider text-gray-400 mb-1.5">Registered Address</p>
-                    <p className="text-gray-600 text-base font-semibold leading-relaxed text-justify">
-                      <strong className="text-primary">SEATOWN CONTAINER LINE PVT LTD</strong><br/>
-                      New No.89 (Old No.45), Marine Tower,<br/>
-                      4th Floor Room No-8, Thambu Chetty Street,<br/>
-                      Chennai – 600 001
-                    </p>
+            <p className="text-base font-semibold leading-relaxed text-justify">
+  <strong className="text-justify">
+    <span className="text-[#2264AD]">SEA</span>
+    <span className="text-[#8D6920]">TOWN</span> CONTAINER LINE PVT LTD
+  </strong><br/>
+  <span className="text-[#2264AD]">New No.89 (Old No.45), Marine Tower,</span><br/>
+  <span className="text-[#8D6920]">4th Floor Room No-8, Thambu Chetty Street,</span><br/>
+  <span className="text-[#2264AD]">Chennai – 600 001</span>
+</p>
                   </div>
                   
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-5 mt-2">

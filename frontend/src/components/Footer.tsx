@@ -99,12 +99,27 @@ export default function Footer() {
             <ul className="space-y-3.5 text-base font-semibold text-gray-600">
               <li className="flex items-start gap-3">
                 <MapPin className="w-4.5 h-4.5 text-secondary shrink-0 mt-0.5" />
-                <span className="text-justify leading-relaxed">
+                {/* <span className="text-justify leading-relaxed">
                   <strong className="text-primary text-justify">SEATOWN CONTAINER LINE PVT LTD </strong><br />
+                   */}
+                   {/* <span className="text-justify leading-relaxed">
+  <strong className="text-justify">
+    <span className="text-[#2264AD]">SEA</span>
+    <span className="text-[#8D6920]">TOWN</span> CONTAINER LINE PVT LTD
+  </strong><br />
                   New No.89 (Old No.45), Marine Tower,<br />
                   4th Floor Room No-8, Thambu Chetty Street,<br />
                   Chennai – 600 001
-                </span>
+                </span> */}
+                <span className="text-justify leading-relaxed">
+  <strong className="text-justify">
+    <span className="text-[#2264AD]">SEA</span>
+    <span className="text-[#8D6920]">TOWN</span> CONTAINER LINE PVT LTD
+  </strong><br />
+  <span className="text-[#2264AD]">New No.89 (Old No.45), Marine Tower,</span><br />
+  <span className="text-[#8D6920]">4th Floor Room No-8, Thambu Chetty Street,</span><br />
+  <span className="text-[#2264AD]">Chennai – 600 001</span>
+</span>
               </li>
               <li className="flex flex-col gap-2.5">
                 <a href="tel:+919384622560" className="flex items-center gap-3 hover:text-primary transition-colors"><Smartphone className="w-4.5 h-4.5 text-accent shrink-0" /> +91 93846 22560</a>
