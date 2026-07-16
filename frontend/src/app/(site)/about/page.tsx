@@ -181,7 +181,7 @@ export default function AboutUs() {
               </p>
 
               {/* Inline Feature Pills */}
-              <div className="flex flex-wrap gap-x-6 gap-y-4">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-6 gap-y-4">
                 {features.map((feat, i) => (
                   <div key={i} className="flex items-center gap-3">
                     <div className="p-2 bg-secondary/10 rounded-lg">
