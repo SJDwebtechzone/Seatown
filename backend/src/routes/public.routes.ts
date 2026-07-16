@@ -161,12 +161,23 @@ const router = express.Router();
 //   EMAIL_USER=youraddress@gmail.com
 //   EMAIL_PASS=your16characterapppassword
 //   EMAIL_TO=james@seatown.in
+//
+// FIX 2: added explicit timeouts. Without these, if the hosting provider
+// blocks or silently drops outbound SMTP traffic (common on free tiers of
+// cloud platforms like Render, to prevent spam abuse), the connection
+// attempt hangs indefinitely instead of failing — leaving the contact
+// form's spinner stuck forever with no error ever surfacing. These
+// timeouts force a failure within a bounded time, so the request always
+// resolves one way or another.
 const transporter = nodemailer.createTransport({
   service: "gmail",
   auth: {
     user: process.env.EMAIL_USER,
     pass: process.env.EMAIL_PASS,
   },
+  connectionTimeout: 10000, // 10s to establish the connection
+  greetingTimeout: 10000,   // 10s to receive the SMTP greeting
+  socketTimeout: 15000,     // 15s of inactivity before giving up
 });
 
 // 1. Get published blog posts
