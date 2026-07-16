@@ -147,38 +147,29 @@
 // export default router;
 
 
- import express from "express";
-import nodemailer from "nodemailer";
+import express from "express";
+import { Resend } from "resend";
 import pool from "../config/db";
 import { upload } from "../middleware/upload";
 import { createReview } from "../controllers/review.controller";
 
 const router = express.Router();
 
-// FIX: Nodemailer transporter for sending contact-form notification emails.
-// Uses a Gmail App Password (not your real Gmail password) via env vars.
-// Add these to your backend .env file:
-//   EMAIL_USER=youraddress@gmail.com
-//   EMAIL_PASS=your16characterapppassword
-//   EMAIL_TO=james@seatown.in
+// FIX: switched from Gmail SMTP (Nodemailer) to Resend. Render blocks
+// outbound SMTP traffic on its free tier (common on cloud hosts, to
+// prevent spam abuse), which caused every email attempt to hang and then
+// fail with ETIMEDOUT on the connection stage — never even reaching
+// Gmail. Resend sends over regular HTTPS (port 443), which is never
+// blocked, so this works reliably in production.
 //
-// FIX 2: added explicit timeouts. Without these, if the hosting provider
-// blocks or silently drops outbound SMTP traffic (common on free tiers of
-// cloud platforms like Render, to prevent spam abuse), the connection
-// attempt hangs indefinitely instead of failing — leaving the contact
-// form's spinner stuck forever with no error ever surfacing. These
-// timeouts force a failure within a bounded time, so the request always
-// resolves one way or another.
-const transporter = nodemailer.createTransport({
-  service: "gmail",
-  auth: {
-    user: process.env.EMAIL_USER,
-    pass: process.env.EMAIL_PASS,
-  },
-  connectionTimeout: 10000, // 10s to establish the connection
-  greetingTimeout: 10000,   // 10s to receive the SMTP greeting
-  socketTimeout: 15000,     // 15s of inactivity before giving up
-});
+// Add this to your backend .env / Render environment variables:
+//   RESEND_API_KEY=re_your_key_here
+//
+// NOTE: while using Resend's shared test domain (onboarding@resend.dev),
+// you can only send TO the email address you signed up with on Resend.
+// To send to any recipient, verify your own domain in the Resend
+// dashboard and change the "from" address below to use it.
+const resend = new Resend(process.env.RESEND_API_KEY);
 
 // 1. Get published blog posts
 router.get("/blogs", async (req, res) => {
@@ -283,15 +274,16 @@ router.post("/contacts", async (req, res) => {
       [name, email, phone || null, service || "General", message]
     );
 
-    // FIX: send an email notification after the inquiry is saved.
-    // Wrapped in its own try/catch so an email failure (bad credentials,
-    // Gmail rate limit, network blip) never breaks the actual form
-    // submission — the inquiry is already safely in the database by
-    // this point regardless of what happens here.
+    // Send an email notification after the inquiry is saved. Wrapped in
+    // its own try/catch so an email failure never breaks the actual form
+    // submission — the inquiry is already safely in the database by this
+    // point regardless of what happens here.
     try {
-      await transporter.sendMail({
-        from: `"Seatown Website" <${process.env.EMAIL_USER}>`,
-        to: process.env.EMAIL_TO,
+      const { data, error } = await resend.emails.send({
+        // Using Resend's shared test domain for now — see NOTE above
+        // about verifying your own domain to send to any recipient.
+        from: "Seatown Website <onboarding@resend.dev>",
+        to: process.env.EMAIL_TO as string,
         replyTo: email,
         subject: `New Inquiry: ${service || "General"} — ${name}`,
         html: `
@@ -303,6 +295,12 @@ router.post("/contacts", async (req, res) => {
           <p><strong>Message:</strong><br/>${message}</p>
         `,
       });
+
+      if (error) {
+        console.error("Resend email error:", error);
+      } else {
+        console.log("Email sent via Resend:", data);
+      }
     } catch (emailErr) {
       console.error("Failed to send contact notification email:", emailErr);
       // Intentionally not returning an error response here — the
