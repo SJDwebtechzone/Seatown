@@ -1,11 +1,13 @@
 import { NextResponse } from "next/server";
 
+const BACKEND_URL = process.env.BACKEND_URL || "http://localhost:5000";
+
 export async function POST(req: Request) {
   try {
     const { username, password } = await req.json();
 
     // Call Express backend
-    const response = await fetch("http://localhost:5000/api/auth/login", {
+    const response = await fetch(`${BACKEND_URL}/api/auth/login`, {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
