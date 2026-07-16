@@ -3,6 +3,8 @@ import { NextResponse } from "next/server";
 // Public (unauthenticated) proxy — forwards requests to /api/public/* on the Express backend.
 // No token required.
 
+const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000";
+
 export async function GET(req: Request, { params }: { params: Promise<{ path: string[] }> }) {
   return handlePublicProxy(req, await params, "GET");
 }
@@ -15,7 +17,7 @@ async function handlePublicProxy(req: Request, params: { path: string[] }, metho
   try {
     const pathJoined = params.path.join("/");
     const { search } = new URL(req.url);
-    const targetUrl = `http://localhost:5000/api/public/${pathJoined}${search}`;
+    const targetUrl = `${API_URL}/api/public/${pathJoined}${search}`;
 
     const headers: Record<string, string> = {};
 
