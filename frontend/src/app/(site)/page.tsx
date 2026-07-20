@@ -474,7 +474,7 @@ export default function Home() {
           <div className="absolute inset-0 pointer-events-none" style={{ backgroundImage: 'radial-gradient(rgba(193,147,63,0.15) 1px, transparent 1px)', backgroundSize: '28px 28px' }} />
 
           {/* Top content */}
-          <div className="relative z-10">
+          <div className="relative z-10 pr-16 md:pr-20">
             <span className="text-accent text-sm md:text-base font-black uppercase tracking-[0.22em] mb-4 flex items-center gap-2">
               <span className="font-display w-8 h-[2px] bg-accent" />
               Global Trade Connections
